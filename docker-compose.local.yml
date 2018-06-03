@@ -1,5 +1,7 @@
 version: '3'
 services:
-    web:
-        ports:
-            - 8888:80
+  web:
+    ports:
+      - 8888:80
+    volumes:
+      - ./html:/usr/share/nginx/html:cached
