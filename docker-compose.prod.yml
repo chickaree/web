@@ -1,0 +1,14 @@
+version: '3'
+services:
+  web:
+    restart: always
+    networks:
+      - default
+      - ingress
+    environment:
+        VIRTUAL_HOST: 'chickar.ee,origin.chickar.ee,www.chickar.ee'
+        LETSENCRYPT_HOST: 'chickar.ee,origin.chickar.ee,www.chickar.ee'
+networks:
+  ingress:
+    external:
+      name: ingress

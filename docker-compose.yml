@@ -5,5 +5,3 @@ services:
         image: chickaree/web
         env_file:
             - .env
-        environment:
-            VIRTUAL_HOST: 'chickar.ee,origin.chickar.ee,www.chickar.ee'
