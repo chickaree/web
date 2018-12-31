@@ -18,8 +18,9 @@ const getLinkData = (rawURL) => {
 };
 
 const keepPosition = (win, doc) => {
-  const height = document.body.clientHeight;
-  return () => {
+  return (callback) => {
+    const height = document.body.clientHeight;
+    callback();
     win.scrollTo(0, win.scrollY + document.body.clientHeight - height);
   };
 }
@@ -32,24 +33,24 @@ const Banner = ({ src, alt }) => {
     if (!container.current) {
       return;
     }
+
     const doc = container.current.ownerDocument;
     const win = doc.defaultView || doc.parentWindow;
 
+    const keep = keepPosition(win, doc);
+
     // Remove any elements in the container without scrolling the user.
     while (container.current.firstChild) {
-      const keep = keepPosition(win, doc);
-      container.current.removeChild(container.current.firstChild);
-      keep();
+      keep(() => container.current.removeChild(container.current.firstChild));
     }
 
-    const keep = keepPosition(win, doc);
     const image = doc.createElement('img');
     image.src = src;
     image.alt = alt;
     image.classList.add('w-100');
     image.onload = () => {
-      container.current.appendChild(image);
-      keep();
+      // Add the image and prevent the user from being scrolled.
+      keep(() => container.current.appendChild(image));
     };
   });
 
@@ -60,7 +61,19 @@ const Banner = ({ src, alt }) => {
   return (
     <div ref={container} className="banner" />
   );
-}
+};
+
+const Icon = ({ src, alt }) => {
+  if (!src) {
+    return null;
+  }
+
+  return (
+    <div className="col-4 col-lg-2">
+      <img src={src} alt={alt} className="icon w-100 img-thumbnail" />
+    </div>
+  );
+};
 
 const Query = ({ data, sitename, description, banner, icon, feeds }) => {
   let className = [
@@ -79,9 +92,7 @@ const Query = ({ data, sitename, description, banner, icon, feeds }) => {
       <Banner src={banner} alt={sitename} />
       <div className={className.join(' ')}>
         <div className="row mt-3">
-          <div className="col-4 col-lg-2">
-            <img src={icon} alt={sitename} className="icon w-100 img-thumbnail" />
-          </div>
+          <Icon src={icon} alt={sitename} />
           <div className="col-auto">
             <h2>{sitename}</h2>
           </div>
@@ -91,14 +102,11 @@ const Query = ({ data, sitename, description, banner, icon, feeds }) => {
         </div>
         <div className="row">
           <div className="col">
-            {feeds.map(feed => {
-
-              return (
-                <div key={feed.href}>
-                  <Link {...getLinkData(feed.href)}>{feed.title}</Link> - {feed.href}
-                </div>
-              );
-            })}
+            {feeds.map(feed => (
+              <div key={feed.href}>
+                <Link {...getLinkData(feed.href)}>{feed.title}</Link> - {feed.href}
+              </div>
+            ))}
             <code style={{overflowWrap: 'break-word'}}>{data}</code>
           </div>
         </div>
@@ -110,7 +118,7 @@ const Query = ({ data, sitename, description, banner, icon, feeds }) => {
 Query.getInitialProps = async ({ query, res }) => {
   const { host, path: rawPath } = query;
 
-  const path = rawPath ? `/${decode(path)}` : '/';
+  const path = rawPath ? `/${decode(rawPath)}` : '/';
 
   if ( !host ) {
     // @TODO Translate!
@@ -139,8 +147,17 @@ Query.getInitialProps = async ({ query, res }) => {
   const $ = cherrio.load(data);
 
   const head = $('head');
-  const sitename = $('meta[property="og:site_name"], meta[name="og:site_name"]', head).last().attr('content');
-  const description = $('meta[property="og:description"], meta[name="og:description"]', head).last().attr('content');
+  let sitename = $('meta[property="og:site_name"], meta[name="og:site_name"]', head).last().attr('content');
+  if (!sitename) {
+    sitename = $('meta[name="application-name"]', head).last().attr('content');
+  }
+  if (!sitename) {
+    sitename = $('title', head).last().text();
+  }
+  let description = $('meta[property="og:description"], meta[name="og:description"]', head).last().attr('content');
+  if (!description) {
+    description = $('meta[name="description"]', head).last().attr('content');
+  }
   const banner = $('meta[property="og:image"], meta[name="og:image"]', head).last().attr('content');
   const icons = $('link[rel="icon"], link[rel="apple-touch-icon"]', head).toArray().map(link => link.attribs).filter(link => !!link.href).sort((a, b) => {
     // Prefer larger.
@@ -156,7 +173,19 @@ Query.getInitialProps = async ({ query, res }) => {
   const feeds = $('link[rel="alternate"]').toArray().map((link, index) => ({
     ...link.attribs,
     order: index,
-  })).sort((a, b) => {
+  })).filter((feed) => {
+    // If the feed is missing an href, it should not be considered.
+    if (!feed.href) {
+      return false;
+    }
+
+    // Only include feeds that are types we know how to deal with.
+    if (!feed.type || !['application/json', 'application/rss+xml'].includes(feed.type)) {
+      return false;
+    }
+
+    return true;
+  }).sort((a, b) => {
     // Prefer JSON.
     if (!a.type || !b.type) {
       return 0;
@@ -176,11 +205,6 @@ Query.getInitialProps = async ({ query, res }) => {
 
     return 0;
   }).reduce((acc, feed) => {
-    // If the feed is missing an href, it should not be considered.
-    if (!feed.href) {
-      return acc;
-    }
-
     // Dedupe the feeds by the title.
     if (acc.find(f => f.title === feed.title)) {
       return acc;
