@@ -153,7 +153,10 @@ Query.getInitialProps = async ({ query, res }) => {
 
     return bSize - aSize;
   });
-  const feeds = $('link[rel="alternate"]').toArray().map(link => link.attribs).sort((a, b) => {
+  const feeds = $('link[rel="alternate"]').toArray().map((link, index) => ({
+    ...link.attribs,
+    order: index,
+  })).sort((a, b) => {
     // Prefer JSON.
     if (!a.type || !b.type) {
       return 0;
@@ -187,23 +190,7 @@ Query.getInitialProps = async ({ query, res }) => {
       ...acc,
       feed
     ];
-  }, []).sort((a, b) => {
-    if (!a.title || !b.title) {
-      return 0;
-    }
-
-    const aTitle = a.title.toLowerCase();
-    const bTitle = b.title.toLowerCase();
-
-    if (aTitle < bTitle) {
-      return -1;
-    }
-    if (aTitle > bTitle) {
-      return 1;
-    }
-
-    return 0;
-  }).map(feed => ({
+  }, []).sort((a, b) => a.order - b.order).map(feed => ({
     ...feed,
     href: feed.href ? new URL(feed.href, response.url).href : null,
   }));

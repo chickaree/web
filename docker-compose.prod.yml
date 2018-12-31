@@ -1,6 +1,7 @@
 version: '3'
 services:
   ingress:
+    image: chickaree/ingress
     restart: always
     links:
       - web
@@ -12,9 +13,6 @@ services:
         LETSENCRYPT_HOST: 'chickar.ee,origin.chickar.ee,www.chickar.ee'
   web:
     restart: always
-    networks:
-      - default
-      - ingress
 networks:
   ingress:
     external:

@@ -1,10 +1,14 @@
-import React from 'react';
+import { Fragment } from 'react';
 import PropTypes from 'prop-types';
+import Head from 'next/head';
 import 'typeface-lato';
 import '../styles/styles.scss';
 
 const Layout = ( { children } ) => (
-	<React.Fragment>
+	<Fragment>
+		<Head>
+			<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+		</Head>
 		<header className="sticky-top">
 			<div className="container">
 				<div className="row justify-content-center pt-1 pb-1">
@@ -17,7 +21,7 @@ const Layout = ( { children } ) => (
 		<div className="content">
 			{children}
 		</div>
-	</React.Fragment>
+	</Fragment>
 );
 
 Layout.propTypes = {

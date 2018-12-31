@@ -1,14 +1,9 @@
 version: '3'
 services:
-  ingress:
-    build:
-      context: ./
-      dockerfile: Dockerfile.ingress
-    ports:
-      - 8888:80
-    volumes:
-      - ./html:/usr/share/nginx/html:cached
   web:
     build: ./
+    command: 'sh -c "npm install && npm start"'
+    ports:
+      - 8888:80
     volumes:
       - ./:/app:cached

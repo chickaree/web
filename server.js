@@ -7,7 +7,7 @@ const {
 } = require('./next-wrapper');
 
 const dev = process.env.NODE_ENV !== 'production';
-const port = dev ? parseInt(process.env.PORT, 10) || 3000 : 80;
+const port = 80;
 const app = next({ dev });
 const server = new Hapi.Server({
   port,
