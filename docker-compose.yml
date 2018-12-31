@@ -1,7 +1,6 @@
 version: '3'
 services:
-    web:
-        build: ./
-        image: chickaree/web
-        env_file:
-            - .env
+  ingress:
+    image: chickaree/ingress
+  web:
+    image: chickaree/web

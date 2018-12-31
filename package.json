@@ -1,0 +1,43 @@
+{
+  "name": "chickaree",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "@zeit/next-css": "^1.0.1",
+    "@zeit/next-sass": "^1.0.1",
+    "base62.io": "^1.0.0",
+    "bootstrap": "^4.2.1",
+    "cheerio": "^1.0.0-rc.2",
+    "hapi": "^17.8.1",
+    "isomorphic-unfetch": "^3.0.0",
+    "next": "^7.0.2",
+    "node-sass": "^4.11.0",
+    "react": "^16.7.0-alpha.2",
+    "react-dom": "^16.7.0-alpha.2",
+    "typeface-lato": "0.0.54",
+    "url-loader": "^1.1.2"
+  },
+  "devDependencies": {
+    "eslint": "^5.11.1",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-jsx-a11y": "^6.1.2",
+    "eslint-plugin-react": "^7.11.1"
+  },
+  "scripts": {
+    "build": "next build && next export -o ./html",
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chickaree/web.git"
+  },
+  "author": "",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/chickaree/web/issues"
+  },
+  "homepage": "https://github.com/chickaree/web#readme"
+}

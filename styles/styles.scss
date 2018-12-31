@@ -1,0 +1,21 @@
+$font-family-sans-serif: 'Lato', sans-serif;
+$body-color: #ded0c2;
+$body-bg: #3d4037;
+$thumbnail-border-color: $body-color;
+
+@import "~bootstrap/scss/bootstrap";
+
+header {
+  background-color: #899471;
+  img {
+    height: 2.5em;
+  }
+}
+
+.has-banner .icon {
+  margin-top: -50%;
+}
+
+.banner {
+  min-height: 10vh;
+}

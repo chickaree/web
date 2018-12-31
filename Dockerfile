@@ -1,5 +1,8 @@
-FROM nginx:1.13
+# Service
+FROM node:10
+WORKDIR /app
+COPY ./ /app
+RUN npm --unsafe-perm --production install \
+  && npm --production run-script build
 
-COPY ./etc/nginx/default.conf /etc/nginx/conf.d/default.conf
-
-COPY ./html /usr/share/nginx/html
+CMD ["npm", "--production", "start"]
