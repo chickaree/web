@@ -3,7 +3,9 @@ const withCSS = require('@zeit/next-css');
 
 module.exports = withCSS(withSass({
   useFileSystemPublicRoutes: false,
-  exportPathMap: () => ({}),
+  exportPathMap: () => ({
+    '/': { page: '/' }
+  }),
   webpack: (config) => {
     config.module.rules.push({
       test: /\.(png|svg|eot|otf|ttf|woff|woff2)$/,

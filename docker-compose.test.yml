@@ -1,0 +1,12 @@
+version: '3'
+services:
+  ingress:
+    build:
+      context: ./
+      dockerfile: Dockerfile.ingress
+    ports:
+      - 8888:80
+    links:
+      - web
+  web:
+    build: ./

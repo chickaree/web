@@ -104,7 +104,7 @@ const Query = ({ data, sitename, description, banner, icon, feeds }) => {
           <div className="col">
             {feeds.map(feed => (
               <div key={feed.href}>
-                <Link {...getLinkData(feed.href)}>{feed.title}</Link> - {feed.href}
+                <Link {...getLinkData(feed.href)}>{feed.title || 'No Title'}</Link> - {feed.href}
               </div>
             ))}
             <code style={{overflowWrap: 'break-word'}}>{data}</code>
