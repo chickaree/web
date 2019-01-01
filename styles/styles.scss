@@ -1,12 +1,14 @@
 $font-family-sans-serif: 'Lato', sans-serif;
-$body-color: #ded0c2;
+$body-color: #d0d5c6;
 $body-bg: #3d4037;
 $thumbnail-border-color: $body-color;
+$card-bg: rgba(255, 255, 255, 0.1);
+$list-group-bg: transparent;
 
 @import "~bootstrap/scss/bootstrap";
 
 header {
-  background-color: #899471;
+  background-color: $body-color;
   img {
     height: 2.5em;
   }
@@ -14,6 +16,9 @@ header {
 
 .has-banner .icon {
   margin-top: -50%;
+  .rounded {
+    background-color: $body-bg;
+  }
 }
 
 .banner {
