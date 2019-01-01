@@ -4,7 +4,7 @@ const withCSS = require('@zeit/next-css');
 module.exports = withCSS(withSass({
   useFileSystemPublicRoutes: false,
   exportPathMap: () => ({
-    '/': { page: '/' }
+    '/': { page: '/' },
   }),
   webpack: (config) => {
     config.module.rules.push({
