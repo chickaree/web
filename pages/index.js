@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactPixel from 'react-facebook-pixel';
 import 'typeface-lato';
 import 'typeface-oswald';
 import '../styles/index.scss';
@@ -15,6 +16,11 @@ const Index = () => {
     fetch('/api/lead').then(response => response.json()).then(data => setCount(data.count));
   }, []);
 
+  useEffect(() => {
+    ReactPixel.init('574313673080857');
+    ReactPixel.pageView();
+  }, []);
+
   const disabled = status === 'sending' ? true : null;
 
   const handleSubmit = async (e) => {
@@ -27,6 +33,7 @@ const Index = () => {
 
     if (response.ok) {
       setStatus('done');
+      ReactPixel.track('Lead');
     } else {
       setStatus('error');
     }
