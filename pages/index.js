@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Head from 'next/head';
 import ReactPixel from 'react-facebook-pixel';
 import 'typeface-lato';
 import 'typeface-oswald';
@@ -87,19 +88,27 @@ const Index = () => {
     );
   }
 
+  const desc = 'A new social network designed to reach all your followers without an algorithm getting in the way.';
+
   return (
-    <div className="container">
-      <div className="landing row justify-content-center align-items-center min-vh-100">
-        <div className="pt-4 pb-3 col-12 col-sm-9 col-md-6 col-lg-4">
-          <img src="/static/logo.svg" alt="chickar.ee" className="d-block w-75 mx-auto mb-3" />
-          <h4 className="mb-3">
-            A new social network designed to reach all your followers without an
-            algorithm getting in the way.
-          </h4>
-          {form}
+    <>
+      <Head>
+        <meta property="og:title" content="Chickaree" />
+        <meta property="og:description" content={desc} />
+        <meta property="og:url" content="https://chickar.ee/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="/static/og-background.png" />
+      </Head>
+      <div className="container">
+        <div className="landing row justify-content-center align-items-center min-vh-100">
+          <div className="pt-4 pb-3 col-12 col-sm-9 col-md-6 col-lg-4">
+            <img src="/static/logo.svg" alt="chickar.ee" className="d-block w-75 mx-auto mb-3" />
+            <h4 className="mb-3">{desc}</h4>
+            {form}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
