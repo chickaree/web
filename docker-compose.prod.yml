@@ -20,4 +20,4 @@ networks:
     external:
       name: ingress
 volumes:
-  data:
+  database:
