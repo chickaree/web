@@ -1,0 +1,36 @@
+$font-family-sans-serif: 'Lato', sans-serif;
+$font-family-alternative: 'Oswald', sans-serif;
+$body-color: #3d4037;
+$body-bg: #d0d5c6;
+$primary: #3d4037;
+$card-bg: rgba(255, 255, 255, 0.1);
+$input-bg: rgba(255, 255, 255, 0.2);
+$input-border-color: rgba(61, 64, 55, 0.5);
+
+@import "~bootstrap/scss/bootstrap";
+
+.landing::after {
+  content: "";
+  background: url('/static/icon.svg') no-repeat center center;
+  background-size: cover;
+  opacity: 0.04;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+.landing {
+  label {
+    font-family: $font-family-alternative;
+  }
+  .button-primary {
+    color: $body-bg;
+    font-weight: normal;
+  }
+  .ahead {
+    font-family: $font-family-alternative;
+  }
+}

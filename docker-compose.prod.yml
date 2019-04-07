@@ -13,7 +13,11 @@ services:
         LETSENCRYPT_HOST: 'chickar.ee,origin.chickar.ee,www.chickar.ee'
   web:
     restart: always
+    volumes:
+      - database:/app/data
 networks:
   ingress:
     external:
       name: ingress
+volumes:
+  data:

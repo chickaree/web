@@ -1,4 +1,5 @@
 .env
 .next
+/data
 /html
 /node_modules
