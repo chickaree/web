@@ -97,7 +97,7 @@ const Index = () => {
         <meta property="og:description" content={desc} />
         <meta property="og:url" content="https://chickar.ee/" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="/static/og-background.png" />
+        <meta property="og:image" content="https://chickar.ee/static/og-background.png" />
       </Head>
       <div className="container">
         <div className="landing row justify-content-center align-items-center min-vh-100">
