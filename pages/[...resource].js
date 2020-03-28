@@ -1,7 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import Router, { useRouter } from 'next/router';
 import Link from 'next/link';
-import fetch from 'isomorphic-unfetch';
 import cherrio from 'cheerio';
 import { encode, decode } from 'base64url';
 import Layout from '../components/layout';
@@ -100,7 +99,6 @@ function FeedIcon({ href: url, src, alt }) {
   }
 
   const { as, href } = getLinkData(url);
-
   return (
     <Link as={as} href={href}>
       <a className="d-block">
@@ -176,6 +174,33 @@ function FeedList({ feeds: feedList, hasIcon }) {
   );
 }
 
+async function fetchResource(resource, init) {
+  try {
+    return await fetch(resource, init);
+  } catch (e) {
+    const url = new URL(resource);
+    const path = url.href.substr(url.origin.length);
+    const hash = path === '/' ? '' : encode(path.substring(1));
+    const remoteResource = `${url.host}${hash ? `/${hash}` : ''}`;
+    // Try the proxy!
+    return fetch(`https://chickar.ee/api/${remoteResource}`, init);
+  }
+}
+
+function getResponseUrl(response) {
+  const url = new URL(response.url);
+
+  // Reset the response URL if the proxy was used.
+  if (url.host === 'chickar.ee') {
+    const parts = url.pathname.split('/');
+    const domain = parts[2];
+    const path = parts[3] ? `/${decode(parts[3])}` : '/';
+    return new URL(path, `https://${domain}`);
+  }
+
+  return url;
+}
+
 async function getResource(domain, hash) {
   const path = hash ? `/${decode(hash)}` : '/';
 
@@ -184,13 +209,16 @@ async function getResource(domain, hash) {
     throw new Error('No host provided');
   }
 
-  const response = await fetch(`https://${domain}${path}`, {
-    redirect: 'manual',
-  });
-  if (!response.ok && response.headers.has('Location')) {
-    const { as, href } = getLinkData(response.headers.get('Location'));
-    Router.push(href, as);
-    return null;
+  const resource = `https://${domain}${path}`;
+
+  const response = await fetchResource(resource);
+
+  const responseUrl = getResponseUrl(response);
+
+  // If the repsonse was redirected, update the URL.
+  if (response.redirected) {
+    const { as, href } = getLinkData(responseUrl.toString());
+    Router.replace(href, as);
   }
 
   const data = await response.text();
@@ -210,7 +238,7 @@ async function getResource(domain, hash) {
     description = $('meta[name="description"]', head).last().attr('content');
   }
   const banner = $('meta[property="og:image"], meta[name="og:image"]', head).last().attr('content');
-  const icons = $('link[rel="icon"], link[rel="apple-touch-icon"]', head).toArray().map((link) => link.attribs).filter((link) => !!link.href)
+  const icons = $('link[rel="icon"], link[rel="apple-touch-icon"]', head).toArray().map(({ attribs }) => attribs).filter((link) => !!link.href)
     .sort((a, b) => {
     // Prefer larger.
       if (!a.sizes || !b.sizes) {
@@ -272,17 +300,18 @@ async function getResource(domain, hash) {
     .sort((a, b) => a.order - b.order)
     .map((feed) => ({
       ...feed,
-      href: feed.href ? new URL(feed.href, response.url).href : null,
+      href: feed.href ? new URL(feed.href, responseUrl).toString() : null,
     }))
     .map(async (feed) => {
-      const feedResponse = await fetch(feed.href);
+      const feedResponse = await fetchResource(feed.href);
+      const feedResponseUrl = getResponseUrl(feedResponse);
 
       if (feedResponse.headers.has('Content-Type') && feedResponse.headers.get('Content-Type').includes('application/json')) {
-        const feedData = await response.json();
+        const feedData = await feedResponse.json();
         return {
           title: feedData.title || '',
           icon: feedData.icon,
-          feed_url: feedResponse.url,
+          feed_url: feedResponseUrl.toString(),
           description: feedData.description || '',
         };
       }
@@ -300,7 +329,7 @@ async function getResource(domain, hash) {
       if (root.is('channel')) {
         return {
           title: feed$('> title', root).last().text(),
-          feed_url: feedResponse.url,
+          feed_url: feedResponseUrl.toString(),
           icon: feed$('> image > url', root).last().text(),
           description: feed$('> description', root).last().text(),
         };
@@ -309,7 +338,7 @@ async function getResource(domain, hash) {
       if (root.is('feed')) {
         return {
           title: feed$('> title', root).last().text(),
-          feed_url: feedResponse.url,
+          feed_url: feedResponseUrl.toString(),
           icon: feed$('> icon', root).last().text(),
           description: feed$('> description', root).last().text(),
         };
@@ -317,7 +346,7 @@ async function getResource(domain, hash) {
 
       return {
         title: feed.title || '',
-        feed_url: feedResponse.url,
+        feed_url: feedResponseUrl.toString(),
         description: '',
       };
     }));
@@ -325,8 +354,8 @@ async function getResource(domain, hash) {
   return {
     sitename,
     description,
-    banner: banner ? new URL(banner, response.url).href : null,
-    icon: icons.length > 0 ? new URL(icons[0].href, response.url).href : null,
+    banner: banner ? new URL(banner, responseUrl).href : null,
+    icon: icons.length > 0 ? new URL(icons[0].href, responseUrl).href : null,
     feeds,
   };
 }
