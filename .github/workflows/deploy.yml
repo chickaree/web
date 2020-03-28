@@ -18,6 +18,5 @@ jobs:
     - run: npm run build
     - uses: cloudflare/wrangler-action@1.1.0
       with:
-        apiKey: ${{ secrets.CF_API_KEY }}
-        email: ${{ secrets.CF_EMAIL }}
+        apiToken: ${{ secrets.CF_API_TOKEN }}
 
