@@ -50,11 +50,10 @@ function Banner({ src, alt }) {
       // Add the image and prevent the user from being scrolled.
       keep(() => container.current.appendChild(image));
     };
-  });
-
-  if (!src) {
-    return null;
-  }
+  }, [
+    src,
+    alt,
+  ]);
 
   return (
     <div ref={container} className="banner" />
@@ -354,8 +353,8 @@ async function getResource(domain, hash) {
   return {
     sitename,
     description,
-    banner: banner ? new URL(banner, responseUrl).href : null,
-    icon: icons.length > 0 ? new URL(icons[0].href, responseUrl).href : null,
+    banner: banner ? new URL(banner, responseUrl).toString() : null,
+    icon: icons.length > 0 ? new URL(icons[0].href, responseUrl).toString() : null,
     feeds,
   };
 }
