@@ -1,11 +1,20 @@
 {
-  "extends": [
-    "airbnb"
+  "extends": "airbnb",
+  "plugins": [
+      "react-hooks"
   ],
   "env": {
-    "jest": true
+      "browser": true,
+      "worker": true
   },
   "rules": {
-		"react/jsx-filename-extension": ["off"]
+      "react/react-in-jsx-scope": "off",
+      "react/jsx-filename-extension": "off",
+      "react/prop-types": "off",
+      "react/jsx-one-expression-per-line": "off",
+      "jsx-a11y/label-has-associated-control": "off",
+      "jsx-a11y/label-has-for": "off",
+      "react-hooks/rules-of-hooks": "error",
+      "jsx-a11y/anchor-is-valid": "off"
   }
 }

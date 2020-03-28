@@ -1,48 +1,35 @@
 {
-  "name": "chickaree",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@chickaree/web",
+  "version": "0.1.0",
+  "private": true,
   "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "preview": "next build && next export && wrangler preview",
+    "deploy": "next build && next export && wrangler publish",
+    "test": "eslint --ignore-path .gitignore ."
+  },
   "dependencies": {
-    "@hapi/joi": "^15.0.0",
-    "@zeit/next-css": "^1.0.1",
-    "@zeit/next-sass": "^1.0.1",
-    "base62.io": "^1.0.0",
-    "bootstrap": "^4.3.1",
-    "cheerio": "^1.0.0-rc.2",
-    "hapi": "^17.8.5",
+    "@cloudflare/kv-asset-handler": "0.0.9",
+    "base64url": "^3.0.1",
+    "bootstrap": "^4.4.1",
+    "cheerio": "^1.0.0-rc.3",
     "isomorphic-unfetch": "^3.0.0",
-    "next": "^8.0.0",
-    "node-sass": "^4.11.0",
-    "react": "^16.8.0",
-    "react-dom": "^16.8.0",
-    "react-facebook-pixel": "^0.1.2",
-    "sequelize": "^5.2.12",
-    "sqlite3": "^4.0.6",
-    "typeface-lato": "0.0.54",
-    "typeface-oswald": "0.0.54",
-    "url-loader": "^1.1.2"
+    "next": "9.3.1",
+    "react": "16.13.0",
+    "react-dom": "16.13.0",
+    "sass": "^1.26.3",
+    "typeface-lato": "0.0.75"
   },
   "devDependencies": {
-    "eslint": "^5.16.0",
-    "eslint-config-airbnb": "^17.1.0",
-    "eslint-plugin-import": "^2.16.0",
-    "eslint-plugin-jsx-a11y": "^6.2.1",
-    "eslint-plugin-react": "^7.12.4"
-  },
-  "scripts": {
-    "build": "next build && next export -o ./html",
-    "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/chickaree/web.git"
-  },
-  "author": "",
-  "license": "AGPL-3.0-or-later",
-  "bugs": {
-    "url": "https://github.com/chickaree/web/issues"
-  },
-  "homepage": "https://github.com/chickaree/web#readme"
+    "@cloudflare/wrangler": "^1.8.3",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb": "^18.1.0",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.19.0",
+    "eslint-plugin-react-hooks": "^2.5.0"
+  }
 }

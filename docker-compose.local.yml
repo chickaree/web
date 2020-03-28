@@ -1,9 +1,0 @@
-version: '3'
-services:
-  web:
-    build: ./
-    command: 'sh -c "npm install && npm start"'
-    ports:
-      - 8888:80
-    volumes:
-      - ./:/app:cached
