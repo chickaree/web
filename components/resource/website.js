@@ -1,7 +1,5 @@
 function Website() {
-  return (
-
-  );
+  return null;
 }
 
 export default Website;
