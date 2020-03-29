@@ -3,7 +3,9 @@ import { useRouter } from 'next/router';
 import cherrio from 'cheerio';
 import { decode } from 'base64url';
 import useReactor from '@cinematix/reactor';
-import { of, defer, concat, EMPTY } from 'rxjs';
+import {
+  of, defer, concat, EMPTY,
+} from 'rxjs';
 import { switchMap, filter, flatMap } from 'rxjs/operators';
 import getResourceLinkData from '../utils/resource-link-data';
 import getSafeAssetUrl from '../utils/safe-asset-url';
@@ -59,39 +61,43 @@ async function getDataFromHTMLResponse(response) {
     }
 
     return true;
-  }).sort((a, b) => {
+  })
+    .sort((a, b) => {
     // Prefer JSON.
-    if (!a.type || !b.type) {
+      if (!a.type || !b.type) {
+        return 0;
+      }
+
+      if (a.type === b.type) {
+        return 0;
+      }
+
+      if (a.type === 'application/json') {
+        return -1;
+      }
+
+      if (b.type === 'application/json') {
+        return 1;
+      }
+
       return 0;
-    }
-
-    if (a.type === b.type) {
-      return 0;
-    }
-
-    if (a.type === 'application/json') {
-      return -1;
-    }
-
-    if (b.type === 'application/json') {
-      return 1;
-    }
-
-    return 0;
-  }).reduce((acc, feed) => {
+    })
+    .reduce((acc, feed) => {
     // Dedupe the feeds by the title.
-    if (acc.find((f) => f.title === feed.title)) {
-      return acc;
-    }
+      if (acc.find((f) => f.title === feed.title)) {
+        return acc;
+      }
 
-    return [
-      ...acc,
-      feed,
-    ];
-  }, []).sort((a, b) => a.order - b.order).map((feed) => ({
-    ...feed,
-    href: feed.href ? new URL(feed.href, url).toString() : null,
-  }));
+      return [
+        ...acc,
+        feed,
+      ];
+    }, [])
+    .sort((a, b) => a.order - b.order)
+    .map((feed) => ({
+      ...feed,
+      href: feed.href ? new URL(feed.href, url).toString() : null,
+    }));
 
   return {
     type: 'website',
