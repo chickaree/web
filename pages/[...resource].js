@@ -33,6 +33,10 @@ function Banner({ src, alt }) {
       keep(() => container.current.removeChild(container.current.firstChild));
     }
 
+    if (!src) {
+      return;
+    }
+
     const image = doc.createElement('img');
     image.src = src;
     image.alt = alt;
@@ -47,7 +51,7 @@ function Banner({ src, alt }) {
   ]);
 
   return (
-    <div ref={container} className="banner" />
+    <div ref={container} className={src ? 'banner' : ''} />
   );
 }
 
