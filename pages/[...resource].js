@@ -4,7 +4,7 @@ import cherrio from 'cheerio';
 import { decode } from 'base64url';
 import useReactor from '@cinematix/reactor';
 import {
-  of, defer, concat, EMPTY,
+  of, concat, EMPTY, from,
 } from 'rxjs';
 import { switchMap, filter, flatMap } from 'rxjs/operators';
 import getResourceLinkData from '../utils/resource-link-data';
@@ -13,6 +13,9 @@ import fetchResource from '../utils/fetch-resource';
 import getResponseUrl from '../utils/response-url';
 import Website from '../components/resource/website';
 import Layout from '../components/layout';
+import getFeedDataFromJsonResponse from '../utils/feed-data-json';
+import Feed from '../components/resource/feed';
+import getFeedDataFromXmlResponse from '../utils/feed-data-xml';
 
 async function getDataFromHTMLResponse(response) {
   const url = getResponseUrl(response);
@@ -158,10 +161,38 @@ function resourceReactor(value$) {
             }
 
             if (response.headers.get('Content-Type').includes('text/html')) {
-              return defer(() => getDataFromHTMLResponse(response)).pipe(
+              return from(getDataFromHTMLResponse(response)).pipe(
                 flatMap((payload) => of({
                   type: 'RESOURCE_SET',
                   payload,
+                })),
+              );
+            }
+
+            if (response.headers.get('Content-Type').includes('application/json')) {
+              return from(getFeedDataFromJsonResponse(response)).pipe(
+                flatMap((data) => of({
+                  type: 'RESOURCE_SET',
+                  payload: {
+                    type: 'feed',
+                    resource: data,
+                  },
+                })),
+              );
+            }
+
+            if (
+              response.headers.get('Content-Type').includes('application/rss+xml')
+              || response.headers.get('Content-Type').includes('application/xml')
+              || response.headers.get('Content-Type').includes('text/xml')
+            ) {
+              return from(getFeedDataFromXmlResponse(response)).pipe(
+                flatMap((data) => of({
+                  type: 'RESOURCE_SET',
+                  payload: {
+                    type: 'feed',
+                    resource: data,
+                  },
                 })),
               );
             }
@@ -195,6 +226,9 @@ function Resource() {
   switch (state.type) {
     case 'website':
       content = <Website resource={state.resource} />;
+      break;
+    case 'feed':
+      content = <Feed resource={state.resource} />;
       break;
     default:
       content = null;

@@ -2,11 +2,12 @@ import { useEffect, useRef, useReducer } from 'react';
 import { from, concat, of } from 'rxjs';
 import { switchMap, flatMap, reduce } from 'rxjs/operators';
 import useReactor from '@cinematix/reactor';
-import cherrio from 'cheerio';
 import ResourceLink from '../resource-link';
 import fetchResource from '../../utils/fetch-resource';
-import getResponseUrl from '../../utils/response-url';
-import getSafeAssetUrl from '../../utils/safe-asset-url';
+import Icon from '../icon';
+import Listing from '../listing';
+import getFeedDataFromJsonResponse from '../../utils/feed-data-json';
+import getFeedDataFromXmlResponse from '../../utils/feed-data-xml';
 
 function keepPosition(win, doc) {
   return (callback) => {
@@ -59,38 +60,6 @@ function Banner({ src, alt, load }) {
   );
 }
 
-function Icon({ src, alt }) {
-  if (!src) {
-    return null;
-  }
-
-  return (
-    <div className="embed-responsive embed-responsive-1by1">
-      <div className="embed-responsive-item border rounded p-1">
-        <div className="row align-items-center h-100">
-          <div className="col">
-            <img src={src} alt={alt} className="w-100" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function WebsiteIcon({ src, alt }) {
-  if (!src) {
-    return null;
-  }
-
-  return (
-    <div className="col-4 col-lg-2">
-      <div className="icon">
-        <Icon src={src} alt={alt} />
-      </div>
-    </div>
-  );
-}
-
 function FeedIcon({ href, src, alt }) {
   if (!src) {
     return null;
@@ -102,18 +71,6 @@ function FeedIcon({ href, src, alt }) {
         <Icon src={src} alt={alt} />
       </a>
     </ResourceLink>
-  );
-}
-
-function WebsiteDescription({ description }) {
-  if (!description) {
-    return null;
-  }
-
-  return (
-    <div className="col-12 col-lg">
-      <p>{description}</p>
-    </div>
   );
 }
 
@@ -185,50 +142,6 @@ function reducer(state, action) {
   }
 }
 
-async function getFeedDataFromJsonResponse(response) {
-  const data = await response.json();
-  const url = getResponseUrl(response);
-  return {
-    title: data.title || '',
-    icon: getSafeAssetUrl(data.icon, url.toString()),
-    feed_url: url.toString(),
-    description: data.description || '',
-  };
-}
-
-async function getFeedDataFromXmlResponse(response) {
-  const url = getResponseUrl(response);
-  const data = await response.text();
-  const feed$ = cherrio.load(data, {
-    xmlMode: true,
-  });
-
-  let root = feed$.root().children().first();
-  if (root.is('rss')) {
-    root = root.children().first();
-  }
-
-  if (root.is('channel')) {
-    return {
-      title: feed$('> title', root).last().text(),
-      feed_url: url.toString(),
-      icon: getSafeAssetUrl(feed$('> image > url', root).last().text(), url.toString()),
-      description: feed$('> description', root).last().text(),
-    };
-  }
-
-  if (root.is('feed')) {
-    return {
-      title: feed$('> title', root).last().text(),
-      feed_url: url.toString(),
-      icon: getSafeAssetUrl(feed$('> icon', root).last().text(), url.toString()),
-      description: feed$('> description', root).last().text(),
-    };
-  }
-
-  return null;
-}
-
 // @TODO Refactor the FeedList to include this?
 function feedReactor(value$) {
   return value$.pipe(
@@ -291,17 +204,7 @@ function Website({
     <>
       <Banner src={banner} alt={sitename} load={feeds.length === 0 || state.feeds.length > 0} />
       <div className={className.join(' ')}>
-        <div className="row mt-3">
-          <WebsiteIcon src={icon} alt={sitename} />
-          <div className="col">
-            <div className="row">
-              <div className="col-12 col-lg-auto">
-                <h2>{sitename}</h2>
-              </div>
-              <WebsiteDescription description={description} />
-            </div>
-          </div>
-        </div>
+        <Listing title={sitename} description={description} icon={icon} />
         <FeedList feeds={state.feeds} hasIcon={!!icon} />
       </div>
     </>
