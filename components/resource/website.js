@@ -1,9 +1,9 @@
 import { useEffect, useRef, useReducer } from 'react';
+import { from, concat, of } from 'rxjs';
 import { switchMap, flatMap, reduce } from 'rxjs/operators';
 import useReactor from '@cinematix/reactor';
 import cherrio from 'cheerio';
 import ResourceLink from '../resource-link';
-import { from, concat, of } from 'rxjs';
 import fetchResource from '../../utils/fetch-resource';
 import getResponseUrl from '../../utils/response-url';
 import getSafeAssetUrl from '../../utils/safe-asset-url';
@@ -248,8 +248,6 @@ function feedReactor(value$) {
             if (!feed) {
               return acc;
             }
-
-            console.log('FEED', feed);
 
             return {
               ...acc,
