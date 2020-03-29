@@ -147,7 +147,7 @@ function resourceReactor(value$) {
             // If the repsonse was redirected, preform the redirect locally as well.
             if (response.redirected) {
               return of({
-                type: 'ROUTE',
+                type: 'REDIRECT',
                 payload: getResourceLinkData(url.toString()),
               });
             }
@@ -183,8 +183,9 @@ function Resource() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useReactor(resourceReactor, (action) => {
-    if (action.type === 'ROUTE') {
-      router.push(action.payload.href, action.payload.as);
+    // Redirect action uses the router rather than the reducer.
+    if (action.type === 'REDIRECT') {
+      router.replace(action.payload.href, action.payload.as);
     } else {
       dispatch(action);
     }
