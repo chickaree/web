@@ -137,23 +137,21 @@ function FeedList({ feeds: feedList, hasIcon }) {
       <div className={hasIcon ? 'col-lg-10 offset-lg-2 col' : 'col'}>
         <div className="card">
           <ol className="list-group list-group-flush">
-            {feeds.map((feed) => {
-              return (
-                <li className="list-group-item" key={feed.feed_url}>
-                  <div className="row">
-                    <div className={hasFeedIcons ? 'col-3 col-md-2' : ''}>
-                      <FeedIcon href={feed.feed_url} src={feed.icon} alt={feed.title} />
-                    </div>
-                    <div className="col">
-                      <h5>
-                        <ResourceLink resource={feed.feed_url}><a>{feed.title}</a></ResourceLink>
-                      </h5>
-                      <FeedDescription description={feed.description} />
-                    </div>
+            {feeds.map((feed) => (
+              <li className="list-group-item" key={feed.feed_url}>
+                <div className="row">
+                  <div className={hasFeedIcons ? 'col-3 col-md-2' : ''}>
+                    <FeedIcon href={feed.feed_url} src={feed.icon} alt={feed.title} />
                   </div>
-                </li>
-              );
-            })}
+                  <div className="col">
+                    <h5>
+                      <ResourceLink resource={feed.feed_url}><a>{feed.title}</a></ResourceLink>
+                    </h5>
+                    <FeedDescription description={feed.description} />
+                  </div>
+                </div>
+              </li>
+            ))}
           </ol>
         </div>
       </div>
