@@ -1,19 +1,10 @@
 import { useRef, useEffect, useState } from 'react';
 import Router, { useRouter } from 'next/router';
-import Link from 'next/link';
 import cherrio from 'cheerio';
 import { encode, decode } from 'base64url';
+import ResourceLink from '../components/resource-link';
+import getResourceLinkData from '../utils/resource-link-data';
 import Layout from '../components/layout';
-
-const getLinkData = (rawURL) => {
-  const url = new URL(rawURL);
-  const path = url.href.substr(url.origin.length);
-
-  return {
-    as: path === '/' ? `/${url.host}` : `/${url.host}/${encode(path.substr(1))}`,
-    href: '/[...resource]',
-  };
-};
 
 function keepPosition(win, doc) {
   return (callback) => {
@@ -92,18 +83,17 @@ function WebsiteIcon({ src, alt }) {
   );
 }
 
-function FeedIcon({ href: url, src, alt }) {
+function FeedIcon({ href, src, alt }) {
   if (!src) {
     return null;
   }
 
-  const { as, href } = getLinkData(url);
   return (
-    <Link as={as} href={href}>
+    <ResourceLink resource={href}>
       <a className="d-block">
         <Icon src={src} alt={alt} />
       </a>
-    </Link>
+    </ResourceLink>
   );
 }
 
@@ -148,8 +138,6 @@ function FeedList({ feeds: feedList, hasIcon }) {
         <div className="card">
           <ol className="list-group list-group-flush">
             {feeds.map((feed) => {
-              const { href, as } = getLinkData(feed.feed_url);
-
               return (
                 <li className="list-group-item" key={feed.feed_url}>
                   <div className="row">
@@ -158,7 +146,7 @@ function FeedList({ feeds: feedList, hasIcon }) {
                     </div>
                     <div className="col">
                       <h5>
-                        <Link href={href} as={as}><a>{feed.title}</a></Link>
+                        <ResourceLink resource={feed.feed_url}><a>{feed.title}</a></ResourceLink>
                       </h5>
                       <FeedDescription description={feed.description} />
                     </div>
@@ -200,6 +188,21 @@ function getResponseUrl(response) {
   return url;
 }
 
+function getSafeAssetUrl(href, base) {
+  if (!href) {
+    return null;
+  }
+
+  const url = new URL(href, base);
+
+  // If the protocol is not https, the URL is not safe.
+  if (url.protocol !== 'https:') {
+    return null;
+  }
+
+  return url.toString();
+}
+
 async function getResource(domain, hash) {
   const path = hash ? `/${decode(hash)}` : '/';
 
@@ -216,7 +219,7 @@ async function getResource(domain, hash) {
 
   // If the repsonse was redirected, update the URL.
   if (response.redirected) {
-    const { as, href } = getLinkData(responseUrl.toString());
+    const { as, href } = getResourceLinkData(responseUrl.toString());
     Router.replace(href, as);
   }
 
@@ -309,7 +312,7 @@ async function getResource(domain, hash) {
         const feedData = await feedResponse.json();
         return {
           title: feedData.title || '',
-          icon: feedData.icon,
+          icon: getSafeAssetUrl(feedData.icon, feedResponseUrl.toString()),
           feed_url: feedResponseUrl.toString(),
           description: feedData.description || '',
         };
@@ -329,7 +332,7 @@ async function getResource(domain, hash) {
         return {
           title: feed$('> title', root).last().text(),
           feed_url: feedResponseUrl.toString(),
-          icon: feed$('> image > url', root).last().text(),
+          icon: getSafeAssetUrl(feed$('> image > url', root).last().text(), feedResponseUrl.toString()),
           description: feed$('> description', root).last().text(),
         };
       }
@@ -338,7 +341,7 @@ async function getResource(domain, hash) {
         return {
           title: feed$('> title', root).last().text(),
           feed_url: feedResponseUrl.toString(),
-          icon: feed$('> icon', root).last().text(),
+          icon: getSafeAssetUrl(feed$('> icon', root).last().text(), feedResponseUrl.toString()),
           description: feed$('> description', root).last().text(),
         };
       }
@@ -353,8 +356,8 @@ async function getResource(domain, hash) {
   return {
     sitename,
     description,
-    banner: banner ? new URL(banner, responseUrl).toString() : null,
-    icon: icons.length > 0 ? new URL(icons[0].href, responseUrl).toString() : null,
+    banner: banner ? getSafeAssetUrl(banner, responseUrl) : null,
+    icon: icons.length > 0 ? getSafeAssetUrl(icons[0].href, responseUrl) : null,
     feeds,
   };
 }
