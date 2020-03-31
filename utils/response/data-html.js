@@ -48,11 +48,6 @@ function getResponseDataHTML(response, doc) {
       return false;
     }
 
-    // Only include feeds that are types we know how to deal with.
-    if (!link.hasAttribute('type') || !['application/json', 'application/rss+xml'].includes(link.getAttribute('type'))) {
-      return false;
-    }
-
     return true;
   })
     .sort(({ link: a }, { link: b }) => {

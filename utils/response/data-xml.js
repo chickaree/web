@@ -36,7 +36,7 @@ async function getResponseDataXML(response, doc) {
         title: text(':root > title'),
         url: url.toString(),
         icon: safeUrl(':root > icon'),
-        description: text(':root > description'),
+        description: text(':root > description') || text(':root > subtitle'),
       },
     };
   }

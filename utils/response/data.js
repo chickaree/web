@@ -13,8 +13,8 @@ async function getResponseData(response) {
     return getResponseDataJson(response, data);
   }
 
-  // DOMParser does not support rss+xml
-  if (mimeType === 'application/rss+xml') {
+  // DOMParser does not support rss/atom
+  if (['application/rss+xml', 'application/atom+xml'].includes(mimeType)) {
     mimeType = 'application/xml';
   }
 
