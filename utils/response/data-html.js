@@ -48,6 +48,11 @@ function getResponseDataHTML(response, doc) {
       return false;
     }
 
+    // If the link is missing a type, it's not a feed.
+    if (!link.hasAttribute('type')) {
+      return false;
+    }
+
     return true;
   })
     .sort(({ link: a }, { link: b }) => {
