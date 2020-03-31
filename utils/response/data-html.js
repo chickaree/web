@@ -84,6 +84,8 @@ function getResponseDataHTML(response, doc) {
     .sort((a, b) => a.order - b.order)
     .map(({ link }) => (new URL(link.getAttribute('href'), url)).toString());
 
+  console.log('FEEDS', feeds);
+
   return {
     type: 'website',
     resource: {

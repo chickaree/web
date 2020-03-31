@@ -1,6 +1,6 @@
 import { useEffect, useRef, useReducer } from 'react';
 import { from, concat, of } from 'rxjs';
-import { switchMap, flatMap, reduce } from 'rxjs/operators';
+import { switchMap, flatMap, reduce, toArray, map } from 'rxjs/operators';
 import useReactor from '@cinematix/reactor';
 import ResourceLink from '../resource-link';
 import fetchResource from '../../utils/fetch-resource';
@@ -148,25 +148,35 @@ function feedReactor(value$) {
       concat(
         of({ type: 'RESET' }),
         from(feeds).pipe(
-          flatMap((href) => fetchResource(href), 2),
-          flatMap((response) => getResponseData(response)),
-          reduce((acc, item) => {
-            if (!item) {
-              return acc;
-            }
+          flatMap((href, index) => {
+            return fetchResource(href).pipe(
+              flatMap((response) => getResponseData(response)),
+              flatMap((item) => of({
+                item,
+                index,
+              })),
+            );
+          }, 2),
+          toArray(),
+          map((items) => (
+            items.sort((a, b) => a.index - b.index).reduce((acc, { item }) => {
+              if (!item) {
+                return acc;
+              }
 
-            if (item.type !== 'feed') {
-              return acc;
-            }
+              if (item.type !== 'feed') {
+                return acc;
+              }
 
-            return {
-              ...acc,
-              payload: [
-                ...acc.payload,
-                item.resource,
-              ],
-            };
-          }, { type: 'FEEDS_SET', payload: [] }),
+              return {
+                ...acc,
+                payload: [
+                  ...acc.payload,
+                  item.resource,
+                ],
+              };
+            }, { type: 'FEEDS_SET', payload: [] })
+          )),
         ),
       )
     )),
