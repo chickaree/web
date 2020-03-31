@@ -6,8 +6,7 @@ import ResourceLink from '../resource-link';
 import fetchResource from '../../utils/fetch-resource';
 import Icon from '../icon';
 import Listing from '../listing';
-import getFeedDataFromJsonResponse from '../../utils/feed-data-json';
-import getFeedDataFromXmlResponse from '../../utils/feed-data-xml';
+import getResponseData from '../../utils/response/data';
 
 function keepPosition(win, doc) {
   return (callback) => {
@@ -91,7 +90,7 @@ function FeedList({ feeds: feedList, hasIcon }) {
 
   // Remove duplicate feeds.
   const feeds = [...feedList.reduce((map, feed) => {
-    map.set(feed.feed_url, feed);
+    map.set(feed.url, feed);
     return map;
   }, new Map()).values()];
 
@@ -103,14 +102,14 @@ function FeedList({ feeds: feedList, hasIcon }) {
         <div className="card">
           <ol className="list-group list-group-flush">
             {feeds.map((feed) => (
-              <li className="list-group-item" key={feed.feed_url}>
+              <li className="list-group-item" key={feed.url}>
                 <div className="row">
                   <div className={hasFeedIcons ? 'col-3 col-md-2' : ''}>
-                    <FeedIcon href={feed.feed_url} src={feed.icon} alt={feed.title} />
+                    <FeedIcon href={feed.url} src={feed.icon} alt={feed.title} />
                   </div>
                   <div className="col">
                     <h5>
-                      <ResourceLink resource={feed.feed_url}><a>{feed.title}</a></ResourceLink>
+                      <ResourceLink resource={feed.url}><a>{feed.title}</a></ResourceLink>
                     </h5>
                     <FeedDescription description={feed.description} />
                   </div>
@@ -149,16 +148,14 @@ function feedReactor(value$) {
       concat(
         of({ type: 'RESET' }),
         from(feeds).pipe(
-          flatMap(({ href }) => fetchResource(href), 2),
-          flatMap((response) => {
-            if (response.headers.has('Content-Type') && response.headers.get('Content-Type').includes('application/json')) {
-              return getFeedDataFromJsonResponse(response);
+          flatMap((href) => fetchResource(href), 2),
+          flatMap((response) => getResponseData(response)),
+          reduce((acc, item) => {
+            if (!item) {
+              return acc;
             }
 
-            return getFeedDataFromXmlResponse(response);
-          }),
-          reduce((acc, feed) => {
-            if (!feed) {
+            if (item.type !== 'feed') {
               return acc;
             }
 
@@ -166,7 +163,7 @@ function feedReactor(value$) {
               ...acc,
               payload: [
                 ...acc.payload,
-                feed,
+                item.resource,
               ],
             };
           }, { type: 'FEEDS_SET', payload: [] }),

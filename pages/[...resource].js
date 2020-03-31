@@ -1,6 +1,5 @@
 import { useReducer } from 'react';
 import { useRouter } from 'next/router';
-import cherrio from 'cheerio';
 import { decode } from 'base64url';
 import useReactor from '@cinematix/reactor';
 import {
@@ -8,111 +7,12 @@ import {
 } from 'rxjs';
 import { switchMap, filter, flatMap } from 'rxjs/operators';
 import getResourceLinkData from '../utils/resource-link-data';
-import getSafeAssetUrl from '../utils/safe-asset-url';
 import fetchResource from '../utils/fetch-resource';
 import getResponseUrl from '../utils/response-url';
 import Website from '../components/resource/website';
 import Layout from '../components/layout';
-import getFeedDataFromJsonResponse from '../utils/feed-data-json';
 import Feed from '../components/resource/feed';
-import getFeedDataFromXmlResponse from '../utils/feed-data-xml';
-
-async function getDataFromHTMLResponse(response) {
-  const url = getResponseUrl(response);
-  const data = await response.text();
-
-  const $ = cherrio.load(data);
-
-  const head = $('head');
-  let sitename = $('meta[property="og:site_name"], meta[name="og:site_name"]', head).last().attr('content');
-  if (!sitename) {
-    sitename = $('meta[name="application-name"]', head).last().attr('content');
-  }
-  if (!sitename) {
-    sitename = $('title', head).last().text();
-  }
-  let description = $('meta[property="og:description"], meta[name="og:description"]', head).last().attr('content');
-  if (!description) {
-    description = $('meta[name="description"]', head).last().attr('content');
-  }
-  const banner = $('meta[property="og:image"], meta[name="og:image"]', head).last().attr('content');
-  const icons = $('link[rel="icon"], link[rel="apple-touch-icon"]', head).toArray().map(({ attribs }) => attribs).filter((link) => !!link.href)
-    .sort((a, b) => {
-    // Prefer larger.
-      if (!a.sizes || !b.sizes) {
-        return 0;
-      }
-
-      const aSize = parseInt(a.sizes.split('x')[0], 10);
-      const bSize = parseInt(b.sizes.split('x')[0], 10);
-
-      return bSize - aSize;
-    });
-
-  const feeds = $('link[rel="alternate"]').toArray().map((link, index) => ({
-    ...link.attribs,
-    order: index,
-  })).filter((feed) => {
-    // If the feed is missing an href, it should not be considered.
-    if (!feed.href) {
-      return false;
-    }
-
-    // Only include feeds that are types we know how to deal with.
-    if (!feed.type || !['application/json', 'application/rss+xml'].includes(feed.type)) {
-      return false;
-    }
-
-    return true;
-  })
-    .sort((a, b) => {
-    // Prefer JSON.
-      if (!a.type || !b.type) {
-        return 0;
-      }
-
-      if (a.type === b.type) {
-        return 0;
-      }
-
-      if (a.type === 'application/json') {
-        return -1;
-      }
-
-      if (b.type === 'application/json') {
-        return 1;
-      }
-
-      return 0;
-    })
-    .reduce((acc, feed) => {
-    // Dedupe the feeds by the title.
-      if (acc.find((f) => f.title === feed.title)) {
-        return acc;
-      }
-
-      return [
-        ...acc,
-        feed,
-      ];
-    }, [])
-    .sort((a, b) => a.order - b.order)
-    .map((feed) => ({
-      ...feed,
-      href: feed.href ? new URL(feed.href, url).toString() : null,
-    }));
-
-  return {
-    type: 'website',
-    resource: {
-      sitename,
-      description,
-      banner: banner ? getSafeAssetUrl(banner, url.toString()) : null,
-      icon: icons.length > 0 ? getSafeAssetUrl(icons[0].href, url.toString()) : null,
-      feeds,
-    },
-  };
-}
+import getResponseData from '../utils/response/data';
 
 const initialState = {
   type: null,
@@ -122,6 +22,7 @@ const initialState = {
 function reducer(state, action) {
   switch (action.type) {
     case 'RESOURCE_SET':
+      console.log('ACTION', action);
       return {
         ...state,
         type: action.payload.type,
@@ -160,45 +61,12 @@ function resourceReactor(value$) {
               return EMPTY;
             }
 
-            if (response.headers.get('Content-Type').includes('text/html')) {
-              return from(getDataFromHTMLResponse(response)).pipe(
-                flatMap((payload) => of({
-                  type: 'RESOURCE_SET',
-                  payload,
-                })),
-              );
-            }
-
-            if (response.headers.get('Content-Type').includes('application/json')) {
-              return from(getFeedDataFromJsonResponse(response)).pipe(
-                flatMap((data) => of({
-                  type: 'RESOURCE_SET',
-                  payload: {
-                    type: 'feed',
-                    resource: data,
-                  },
-                })),
-              );
-            }
-
-            if (
-              response.headers.get('Content-Type').includes('application/rss+xml')
-              || response.headers.get('Content-Type').includes('application/xml')
-              || response.headers.get('Content-Type').includes('text/xml')
-            ) {
-              return from(getFeedDataFromXmlResponse(response)).pipe(
-                flatMap((data) => of({
-                  type: 'RESOURCE_SET',
-                  payload: {
-                    type: 'feed',
-                    resource: data,
-                  },
-                })),
-              );
-            }
-
-            // @TODO Throw some sort of error.
-            return EMPTY;
+            return from(getResponseData(response)).pipe(
+              flatMap((payload) => of({
+                type: 'RESOURCE_SET',
+                payload,
+              })),
+            );
           }),
         ),
       );
