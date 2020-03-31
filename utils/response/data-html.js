@@ -1,5 +1,6 @@
 import getSafeAssetUrl from '../safe-asset-url';
 import getResponseUrl from '../response-url';
+import createQueryText from '../query-text';
 
 function createAttribute(doc) {
   return (querySelector, attribute) => {
@@ -12,10 +13,14 @@ function getResponseDataHTML(response, doc) {
   const url = getResponseUrl(response);
   const head = doc.querySelector('head');
   const attribute = createAttribute(head);
+  const text = createQueryText(head);
 
   let title = attribute('meta[property="og:site_name"], meta[name="og:site_name"]', 'content');
   if (!title) {
     title = attribute('meta[name="application-name"]', 'content');
+  }
+  if (!title) {
+    title = text('title');
   }
   let description = attribute('meta[property="og:description"], meta[name="og:description"]', 'content');
   if (!description) {

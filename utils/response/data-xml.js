@@ -1,12 +1,6 @@
 import getSafeAssetUrl from '../safe-asset-url';
 import getResponseUrl from '../response-url';
-
-function createText(doc) {
-  return (querySelector) => {
-    const element = doc.querySelector(querySelector);
-    return element ? element.textContent : null;
-  };
-}
+import createQueryText from '../query-text';
 
 function createSafeUrl(doc, url) {
   return (querySelector) => {
@@ -20,7 +14,7 @@ async function getResponseDataXML(response, doc) {
 
   const root = doc.documentElement.tagName;
 
-  const text = createText(doc);
+  const text = createQueryText(doc);
   const safeUrl = createSafeUrl(doc, url);
 
   if (root.toLowerCase() === 'rss') {
