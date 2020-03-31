@@ -38,7 +38,7 @@ function getResponseDataHTML(response, doc) {
       const bSize = parseInt(b.getAttribute('sizes').split('x')[0], 10);
 
       return bSize - aSize;
-    });
+    }).map((link) => link.getAttribute('href'));
   const feeds = [...head.querySelectorAll('link[rel="alternate"]').values()].map((link, index) => ({
     link,
     order: index,
@@ -96,7 +96,7 @@ function getResponseDataHTML(response, doc) {
       title,
       description,
       banner: banner ? getSafeAssetUrl(banner, url.toString()) : null,
-      icon: icons.length > 0 ? getSafeAssetUrl(icons[0].href, url.toString()) : null,
+      icon: icons.length > 0 ? getSafeAssetUrl(icons[0], url.toString()) : null,
       feeds,
     },
   };
