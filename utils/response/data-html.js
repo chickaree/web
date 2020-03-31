@@ -1,19 +1,27 @@
 import getSafeAssetUrl from '../safe-asset-url';
 import getResponseUrl from '../response-url';
 
+function createAttribute(doc) {
+  return (querySelector, attribute) => {
+    const element = doc.querySelector(querySelector);
+    return element && element.hasAttribute(attribute) ? element.getAttribute(attribute) : null;
+  };
+}
+
 function getResponseDataHTML(response, doc) {
   const url = getResponseUrl(response);
-
   const head = doc.querySelector('head');
-  let title = head.querySelector('meta[property="og:site_name"], meta[name="og:site_name"]').getAttribute('content');
+  const attribute = createAttribute(head);
+
+  let title = attribute('meta[property="og:site_name"], meta[name="og:site_name"]', 'content');
   if (!title) {
-    title = head.querySelector('meta[name="application-name"]').getAttribute('content');
+    title = attribute('meta[name="application-name"]', 'content');
   }
-  let description = head.querySelector('meta[property="og:description"], meta[name="og:description"]').getAttribute('content');
+  let description = attribute('meta[property="og:description"], meta[name="og:description"]', 'content');
   if (!description) {
-    description = head.querySelector('meta[name="description"]').getAttribute('content');
+    description = attribute('meta[name="description"]', 'content');
   }
-  const banner = head.querySelector('meta[property="og:image"], meta[name="og:image"]').getAttribute('content');
+  const banner = attribute('meta[property="og:image"], meta[name="og:image"]', 'content');
   const icons = [...head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').values()].filter((element) => !!element.hasAttribute('href'))
     .sort((a, b) => {
     // Prefer larger.

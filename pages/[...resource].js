@@ -22,7 +22,6 @@ const initialState = {
 function reducer(state, action) {
   switch (action.type) {
     case 'RESOURCE_SET':
-      console.log('ACTION', action);
       return {
         ...state,
         type: action.payload.type,

@@ -7,17 +7,22 @@ async function getResponseData(response) {
     return null;
   }
 
-  const mimeType = response.headers.get('Content-Type').split(';').shift().trim();
+  let mimeType = response.headers.get('Content-Type').split(';').shift().trim();
   if (mimeType === 'application/json') {
     const data = await response.json();
     return getResponseDataJson(response, data);
+  }
+
+  // DOMParser does not support rss+xml
+  if (mimeType === 'application/rss+xml') {
+    mimeType = 'application/xml';
   }
 
   const text = await response.text();
   const parser = new DOMParser();
   const doc = parser.parseFromString(text, mimeType);
 
-  if (doc instanceof Document) {
+  if (doc instanceof HTMLDocument) {
     return getResponseDataHTML(response, doc);
   }
   if (doc instanceof XMLDocument) {

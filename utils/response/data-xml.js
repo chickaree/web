@@ -1,31 +1,48 @@
 import getSafeAssetUrl from '../safe-asset-url';
 import getResponseUrl from '../response-url';
 
+function createText(doc) {
+  return (querySelector) => {
+    const element = doc.querySelector(querySelector);
+    return element ? element.textContent : null;
+  };
+}
+
+function createSafeUrl(doc, url) {
+  return (querySelector) => {
+    const element = doc.querySelector(querySelector);
+    return element ? getSafeAssetUrl(element.textContent, url.toString()) : null;
+  };
+}
+
 async function getResponseDataXML(response, doc) {
   const url = getResponseUrl(response);
 
-  const root = doc.documentElement;
+  const root = doc.documentElement.tagName;
 
-  if (root.tagName.toLowerCase() === 'channel') {
+  const text = createText(doc);
+  const safeUrl = createSafeUrl(doc, url);
+
+  if (root.toLowerCase() === 'rss') {
     return {
       type: 'feed',
       resource: {
-        title: root.querySelector('> title').innerText,
+        title: text('channel > title'),
         url: url.toString(),
-        icon: getSafeAssetUrl(root.querySelector('> image > url').innerText, url.toString()),
-        description: root.querySelector('> description').innerText,
+        icon: safeUrl('channel > image > url'),
+        description: text('channel > description'),
       },
     };
   }
 
-  if (root.tagName.toLowerCase() === 'feed') {
+  if (root.toLowerCase() === 'feed') {
     return {
       type: 'feed',
       resource: {
-        title: root.querySelector('> title').innerText,
-        feed_url: url.toString(),
-        icon: getSafeAssetUrl(root.querySelector('> icon').innerText, url.toString()),
-        description: root.querySelector('> description').innerText,
+        title: text(':root > title'),
+        url: url.toString(),
+        icon: safeUrl(':root > icon'),
+        description: text(':root > description'),
       },
     };
   }
