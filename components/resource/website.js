@@ -1,6 +1,11 @@
 import { useEffect, useRef, useReducer } from 'react';
 import { from, concat, of } from 'rxjs';
-import { switchMap, flatMap, reduce, toArray, map } from 'rxjs/operators';
+import {
+  switchMap,
+  flatMap,
+  toArray,
+  map,
+} from 'rxjs/operators';
 import useReactor from '@cinematix/reactor';
 import ResourceLink from '../resource-link';
 import fetchResource from '../../utils/fetch-resource';
@@ -89,9 +94,9 @@ function FeedList({ feeds: feedList, hasIcon }) {
   }
 
   // Remove duplicate feeds.
-  const feeds = [...feedList.reduce((map, feed) => {
-    map.set(feed.url, feed);
-    return map;
+  const feeds = [...feedList.reduce((feedMap, feed) => {
+    feedMap.set(feed.url, feed);
+    return feedMap;
   }, new Map()).values()];
 
   const hasFeedIcons = !!feeds.filter((feed) => !!feed.icon).length;
@@ -148,15 +153,15 @@ function feedReactor(value$) {
       concat(
         of({ type: 'RESET' }),
         from(feeds).pipe(
-          flatMap((href, index) => {
-            return fetchResource(href).pipe(
+          flatMap((href, index) => (
+            fetchResource(href).pipe(
               flatMap((response) => getResponseData(response)),
               flatMap((item) => of({
                 item,
                 index,
               })),
-            );
-          }, 2),
+            )
+          ), 2),
           toArray(),
           map((items) => (
             items.sort((a, b) => a.index - b.index).reduce((acc, { item }) => {
