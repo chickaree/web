@@ -53,6 +53,11 @@ function getResponseDataHTML(response, doc) {
       return false;
     }
 
+    // Only include types we currently support.
+    if (!['application/json', 'application/xml', 'application/rss+xml', 'application/atom+xml', 'text/xml'].includes(link.getAttribute('type'))) {
+      return false;
+    }
+
     return true;
   })
     .sort(({ link: a }, { link: b }) => {
