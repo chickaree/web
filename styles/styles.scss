@@ -26,6 +26,10 @@ header {
   min-height: 10vh;
 }
 
+.card-img-top {
+  object-fit: cover;
+}
+
 .landing {
   &::after {
     content: "";

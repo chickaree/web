@@ -190,7 +190,7 @@ function feedReactor(value$) {
 
 function Website({
   resource: {
-    title,
+    sitename,
     description,
     banner,
     icon,
@@ -214,9 +214,9 @@ function Website({
 
   return (
     <>
-      <Banner src={banner} alt={title} load={feeds.length === 0 || state.feeds.length > 0} />
+      <Banner src={banner} alt={sitename} load={feeds.length === 0 || state.feeds.length > 0} />
       <div className={className.join(' ')}>
-        <Listing title={title} description={description} icon={icon} />
+        <Listing title={sitename} description={description} icon={icon} />
         <FeedList feeds={state.feeds} hasIcon={!!icon} />
       </div>
     </>

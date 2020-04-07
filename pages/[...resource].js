@@ -13,6 +13,7 @@ import Website from '../components/resource/website';
 import Layout from '../components/layout';
 import Feed from '../components/resource/feed';
 import getResponseData from '../utils/response/data';
+import Article from '../components/resource/article';
 
 const initialState = {
   type: null,
@@ -93,6 +94,9 @@ function Resource() {
   switch (state.type) {
     case 'website':
       content = <Website resource={state.resource} />;
+      break;
+    case 'article':
+      content = <Article resource={state.resource} />;
       break;
     case 'feed':
       content = <Feed resource={state.resource} />;
