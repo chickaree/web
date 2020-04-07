@@ -45,6 +45,7 @@ async function getResponseDataHTML(response, doc) {
           type = 'article';
           title = data.name;
           description = data.headline;
+          sitename = data.publisher && data.publisher.name ? data.publisher.name : null;
           if (data.image) {
             if (typeof data.image === 'string') {
               banner = data.image;
@@ -80,7 +81,6 @@ async function getResponseDataHTML(response, doc) {
   if (!title) {
     title = attribute('meta[property="og:title"], meta[name="og:title"]', 'content');
   }
-
   if (!title) {
     title = text('title');
   }
@@ -88,13 +88,11 @@ async function getResponseDataHTML(response, doc) {
   if (!sitename) {
     sitename = attribute('meta[property="og:site_name"], meta[name="og:site_name"]', 'content');
   }
-
   if (!sitename) {
     sitename = attribute('meta[name="application-name"]', 'content');
   }
-
   if (!sitename) {
-    sitename = title;
+    sitename = text('title');
   }
 
   if (!description) {
@@ -107,6 +105,7 @@ async function getResponseDataHTML(response, doc) {
   if (!banner) {
     banner = attribute('meta[property="og:image"], meta[name="og:image"]', 'content');
   }
+
   const icons = [...head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').values()].filter((element) => !!element.hasAttribute('href'))
     .sort((a, b) => {
     // Prefer larger.
@@ -119,6 +118,7 @@ async function getResponseDataHTML(response, doc) {
 
       return bSize - aSize;
     }).map((link) => link.getAttribute('href'));
+
   const feeds = [...head.querySelectorAll('link[rel="alternate"]').values()].map((link, index) => ({
     link,
     order: index,
