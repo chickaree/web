@@ -16,7 +16,6 @@
     "@cloudflare/kv-asset-handler": "0.0.9",
     "base64url": "^3.0.1",
     "bootstrap": "^4.4.1",
-    "cheerio": "^1.0.0-rc.3",
     "jsonld": "^3.0.1",
     "next": "9.3.2",
     "react": "16.13.0",
