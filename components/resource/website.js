@@ -1,4 +1,4 @@
-import { useEffect, useRef, useReducer } from 'react';
+import { useReducer } from 'react';
 import { from, concat, of } from 'rxjs';
 import {
   switchMap,
