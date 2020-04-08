@@ -1,3 +1,5 @@
+import ResourceLink from "../resource-link";
+
 function Image({ href, src, alt }) {
   if (!src) {
     return null;
@@ -6,7 +8,7 @@ function Image({ href, src, alt }) {
   return (
     <div className="embed-responsive embed-responsive-16by9">
       <a href={href}>
-        <img src={src} alt={alt} className="card-img-top embed-responsive-item" />
+        <img src={src} alt={alt} className="embed-responsive-item" />
       </a>
     </div>
   );
@@ -20,6 +22,26 @@ function Description({ text }) {
   return <p className="card-text">{text}</p>;
 }
 
+function Icon({
+  resource,
+  src,
+  alt,
+}) {
+  if (!src) {
+    return null;
+  }
+
+  return (
+    <div className="col-1">
+      <ResourceLink resource={resource}>
+        <a>
+          <img src={src} alt={alt} className="w-100" />
+        </a>
+      </ResourceLink>
+    </div>
+  );
+}
+
 function Article({
   resource: {
     title,
@@ -30,18 +52,31 @@ function Article({
     sitename,
   },
 }) {
+  const resource = new URL(url);
+
   return (
     <div className="container">
       <div className="row mb-3 mt-4">
-        <div className={icon ? 'col-lg-8 offset-lg-2 col' : 'col'}>
+        <div className="col-lg-8 offset-lg-2 col">
           <div className="card">
             <div className="card-header">
               <div className="row align-items-center">
-                <div className="col-1">
-                  <img src={icon} alt={sitename} className="w-100" />
-                </div>
+                <Icon resource={resource.origin} src={icon} alt={sitename} />
                 <div className="col-auto">
-                  <h5 className="mb-0">{sitename}</h5>
+                  <h5 className="mb-0">
+                    <ResourceLink resource={resource.origin}>
+                      <a>
+                        {sitename}
+                      </a>
+                    </ResourceLink>
+                  </h5>
+                  <h6 className="small mb-0">
+                    <ResourceLink resource={resource.origin}>
+                      <a>
+                        {resource.host}
+                      </a>
+                    </ResourceLink>
+                  </h6>
                 </div>
               </div>
             </div>

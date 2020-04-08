@@ -13,54 +13,15 @@ import Icon from '../icon';
 import Listing from '../listing';
 import getResponseData from '../../utils/response/data';
 
-function keepPosition(win, doc) {
-  return (callback) => {
-    const height = doc.body.clientHeight;
-    callback();
-    win.scrollTo(0, win.scrollY + doc.body.clientHeight - height);
-  };
-}
-
-function Banner({ src, alt, load }) {
-  const container = useRef(undefined);
-
-  // Load the image first to prevent the user from being scrolled.
-  useEffect(() => {
-    if (!container.current || !load) {
-      return;
-    }
-
-    const doc = container.current.ownerDocument;
-    const win = doc.defaultView || doc.parentWindow;
-
-    const keep = keepPosition(win, doc);
-
-    // Remove any elements in the container without scrolling the user.
-    while (container.current.firstChild) {
-      keep(() => container.current.removeChild(container.current.firstChild));
-    }
-
-    if (!src) {
-      return;
-    }
-
-    const image = doc.createElement('img');
-    image.src = src;
-    image.alt = alt;
-    image.classList.add('w-100');
-    image.onload = () => {
-      // Add the image and prevent the user from being scrolled.
-      // Give everything else a moment to load.
-      keep(() => container.current.appendChild(image));
-    };
-  }, [
-    load,
-    src,
-    alt,
-  ]);
+function Banner({ src, alt }) {
+  if (!src) {
+    return null;
+  }
 
   return (
-    <div ref={container} className={src ? 'banner' : ''} />
+    <div className="embed-responsive embed-responsive-21by9">
+      <img src={src} alt={alt} className="embed-responsive-item" />
+    </div>
   );
 }
 
@@ -214,7 +175,7 @@ function Website({
 
   return (
     <>
-      <Banner src={banner} alt={sitename} load={feeds.length === 0 || state.feeds.length > 0} />
+      <Banner src={banner} alt={sitename} />
       <div className={className.join(' ')}>
         <Listing title={sitename} description={description} icon={icon} />
         <FeedList feeds={state.feeds} hasIcon={!!icon} />
