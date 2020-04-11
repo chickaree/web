@@ -53,7 +53,7 @@ function DatePublished({
 
   return (
     <div className="col-auto">
-      <time dateTime={datetime}>
+      <time dateTime={datetime} className="small">
         <ResourceLink resource={href}>
           {DateTime.fromISO(datetime).toLocaleString(DateTime.DATETIME_SHORT)}
         </ResourceLink>
