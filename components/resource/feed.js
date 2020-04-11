@@ -82,15 +82,13 @@ function Feed({
 
   useReactor(itemReactor, dispatch, [items]);
 
-  const { origin } = new URL(url);
-
   return (
     <div className="container">
       <Listing title={title} description={description} icon={icon} />
       {state.items.map((item) => ((
         <Article
           key={item.url}
-          origin={origin}
+          origin={url}
           title={item.title}
           url={item.url}
           description={item.description}
