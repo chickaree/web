@@ -12,6 +12,8 @@ import fetchResource from '../../utils/fetch-resource';
 import getResponseData from '../../utils/response/data';
 import Article from '../article';
 
+const concurrency = 6;
+
 const initialState = {
   items: [],
 };
@@ -45,7 +47,7 @@ function itemReactor(value$) {
                 index,
               })),
             )
-          )),
+          ), undefined, concurrency),
           toArray(),
           map((feedItems) => ({
             type: 'ITEMS_SET',
@@ -85,18 +87,19 @@ function Feed({
   return (
     <div className="container">
       <Listing title={title} description={description} icon={icon} />
-      {state.items.map((item) => ((
+      {state.items.map((item) => (
         <Article
           key={item.url}
           origin={url}
           title={item.title}
+          datePublished={item.datePublished}
           url={item.url}
           description={item.description}
           icon={icon}
           banner={item.banner}
           sitename={title}
         />
-      )))}
+      ))}
     </div>
   );
 }

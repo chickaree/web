@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import ResourceLink from './resource-link';
 
 function Image({ href, src, alt }) {
@@ -42,9 +43,29 @@ function Icon({
   );
 }
 
+function DatePublished({
+  datetime,
+  href,
+}) {
+  if (!datetime) {
+    return null;
+  }
+
+  return (
+    <div className="col-auto">
+      <time dateTime={datetime}>
+        <ResourceLink resource={href}>
+          {DateTime.fromISO(datetime).toLocaleString()}
+        </ResourceLink>
+      </time>
+    </div>
+  );
+}
+
 function Article({
   origin,
   title,
+  datePublished,
   url,
   description,
   icon,
@@ -54,36 +75,35 @@ function Article({
   const { host } = new URL(origin);
 
   return (
-    <div className="container">
-      <div className="row mb-3 mt-4">
-        <div className="col-lg-8 offset-lg-2 col">
-          <div className="card">
-            <div className="card-header">
-              <div className="row align-items-center">
-                <Icon resource={origin} src={icon} alt={sitename} />
-                <div className="col-auto">
-                  <h5 className="mb-0">
-                    <ResourceLink resource={origin}>
-                      <a>
-                        {sitename}
-                      </a>
-                    </ResourceLink>
-                  </h5>
-                  <h6 className="small mb-0">
-                    <ResourceLink resource={origin}>
-                      <a>{host}</a>
-                    </ResourceLink>
-                  </h6>
-                </div>
+    <div className="row mb-3 mt-4">
+      <div className="col-lg-8 offset-lg-2 col">
+        <div className="card">
+          <div className="card-header">
+            <div className="row align-items-center">
+              <Icon resource={origin} src={icon} alt={sitename} />
+              <div className="col-auto mr-auto">
+                <h5 className="mb-0">
+                  <ResourceLink resource={origin}>
+                    <a>
+                      {sitename}
+                    </a>
+                  </ResourceLink>
+                </h5>
+                <h6 className="small mb-0">
+                  <ResourceLink resource={origin}>
+                    <a>{host}</a>
+                  </ResourceLink>
+                </h6>
               </div>
+              <DatePublished datetime={datePublished} href={url} />
             </div>
-            <Image href={url} src={banner} alt={title} />
-            <div className="card-body">
-              <h4 className="card-title">
-                <a href={url}>{title}</a>
-              </h4>
-              <Description text={description} />
-            </div>
+          </div>
+          <Image href={url} src={banner} alt={title} />
+          <div className="card-body">
+            <h4 className="card-title">
+              <a href={url}>{title}</a>
+            </h4>
+            <Description text={description} />
           </div>
         </div>
       </div>

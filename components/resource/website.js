@@ -13,6 +13,8 @@ import Icon from '../icon';
 import Listing from '../listing';
 import getResponseData from '../../utils/response/data';
 
+const concurrency = 6;
+
 function Banner({ src, alt }) {
   if (!src) {
     return null;
@@ -122,7 +124,8 @@ function feedReactor(value$) {
                 index,
               })),
             )
-          )),
+          ), undefined, concurrency),
+          // @TODO Render as they come in (group by tick), but sort by date in the reducer.
           toArray(),
           map((items) => (
             items.sort((a, b) => a.index - b.index).reduce((acc, { item }) => {

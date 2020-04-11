@@ -1,3 +1,4 @@
+import {  DateTime } from 'luxon';
 import getSafeAssetUrl from '../safe-asset-url';
 import getResponseUrl from '../response-url';
 import createQueryText from '../query-text';
@@ -30,6 +31,7 @@ async function getResponseDataHTML(response, doc) {
   let banner;
   let icon;
   let manifest;
+  let datePublished;
 
   // @TODO Get the "canonical" url.
 
@@ -82,14 +84,27 @@ async function getResponseDataHTML(response, doc) {
   if (node) {
     try {
       const json = JSON.parse(node.textContent);
+
+      // @TODO Use the canonical?
       const jsonld = await jsonldFrame(json, url.toString());
+
+      // @TODO Get the most "relevant"
       const data = jsonld['@graph'] ? jsonld['@graph'][0] : jsonld;
       switch (data.type) {
         case 'Article':
+        case 'BlogPosting':
         case 'NewsArticle': {
           type = 'article';
           title = data.name || data.headline || title;
           description = data.description || data.headline || description;
+
+          if (data.datePublished) {
+            try {
+              datePublished = DateTime.fromISO(data.datePublished, { zone: 'utc' }).toISO();
+            } catch (e) {
+              // Silence is Golden.
+            }
+          }
 
           const publisher = toArray(data.publisher).filter(({ name }) => !!name);
           sitename = publisher.length > 0 && publisher[0].name ? publisher[0].name : sitename;
@@ -173,6 +188,10 @@ async function getResponseDataHTML(response, doc) {
     banner = attribute('meta[property="og:image"], meta[name="og:image"]', 'content');
   }
 
+  if (!datePublished) {
+    datePublished = attribute('meta[property="article:published_time"], meta[name="article:published_time"]', 'content');
+  }
+
   if (!icon) {
     const icons = [...head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').values()].filter((element) => !!element.hasAttribute('href'))
       .sort((a, b) => {
@@ -250,6 +269,7 @@ async function getResponseDataHTML(response, doc) {
     resource: {
       url: url.toString(),
       manifest,
+      datePublished,
       title,
       sitename,
       description,

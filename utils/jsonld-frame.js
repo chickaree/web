@@ -4,12 +4,17 @@ import jsonldLoader from './jsonld-loader';
 async function jsonldFrame(json, href) {
   const data = await frame(json, {
     '@context': 'https://schema.org',
-    url: href,
+    url: {
+      '@id': href,
+    },
+    mainEntityOfPage: {
+      '@id': href,
+    },
   }, {
     documentLoader: jsonldLoader,
   });
 
-  if (data['@graph'] || data.url) {
+  if (data['@graph'] || data.url || data.mainEntityOfPage) {
     return data;
   }
 
@@ -18,7 +23,12 @@ async function jsonldFrame(json, href) {
   url.protocol = 'http:';
   return frame(json, {
     '@context': 'https://schema.org',
-    url: url.toString(),
+    url: {
+      '@id': url.toString(),
+    },
+    mainEntityOfPage: {
+      '@id': url.toString(),
+    },
   }, {
     documentLoader: jsonldLoader,
   });

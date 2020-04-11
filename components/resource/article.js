@@ -8,20 +8,24 @@ function ResourceArticle({
     icon,
     banner,
     sitename,
+    datePublished,
   },
 }) {
   const { origin } = new URL(url);
 
   return (
-    <Article
-      origin={origin}
-      title={title}
-      url={url}
-      description={description}
-      icon={icon}
-      banner={banner}
-      sitename={sitename}
-    />
+    <div className="container">
+      <Article
+        origin={origin}
+        title={title}
+        url={url}
+        description={description}
+        icon={icon}
+        banner={banner}
+        sitename={sitename}
+        datePublished={datePublished}
+      />
+    </div>
   );
 }
 
