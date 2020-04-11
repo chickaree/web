@@ -81,7 +81,7 @@ function Article({
           <div className="card-header">
             <div className="row align-items-center">
               <Icon resource={source} src={icon} alt={sitename} />
-              <div className="col-auto mr-auto">
+              <div className="col mr-auto">
                 <h5 className="mb-0">
                   <ResourceLink resource={source}>
                     <a>
@@ -90,7 +90,6 @@ function Article({
                   </ResourceLink>
                 </h5>
                 <h6 className="small mb-0">
-                  {/* */}
                   <ResourceLink resource={origin}>
                     <a>{host}</a>
                   </ResourceLink>
