@@ -16,7 +16,7 @@ function ResourceArticle({
   return (
     <div className="container">
       <Article
-        origin={origin}
+        source={origin}
         title={title}
         url={url}
         description={description}

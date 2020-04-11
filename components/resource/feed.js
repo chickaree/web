@@ -90,7 +90,7 @@ function Feed({
       {state.items.map((item) => (
         <Article
           key={item.url}
-          origin={url}
+          source={url}
           title={item.title}
           datePublished={item.datePublished}
           url={item.url}

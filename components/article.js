@@ -63,7 +63,7 @@ function DatePublished({
 }
 
 function Article({
-  origin,
+  source,
   title,
   datePublished,
   url,
@@ -72,7 +72,7 @@ function Article({
   banner,
   sitename,
 }) {
-  const { host } = new URL(origin);
+  const { origin, host } = new URL(source);
 
   return (
     <div className="row mb-3 mt-4">
@@ -80,16 +80,17 @@ function Article({
         <div className="card">
           <div className="card-header">
             <div className="row align-items-center">
-              <Icon resource={origin} src={icon} alt={sitename} />
+              <Icon resource={source} src={icon} alt={sitename} />
               <div className="col-auto mr-auto">
                 <h5 className="mb-0">
-                  <ResourceLink resource={origin}>
+                  <ResourceLink resource={source}>
                     <a>
                       {sitename}
                     </a>
                   </ResourceLink>
                 </h5>
                 <h6 className="small mb-0">
+                  {/* */}
                   <ResourceLink resource={origin}>
                     <a>{host}</a>
                   </ResourceLink>
