@@ -69,9 +69,7 @@ async function getResponseDataHTML(response, doc) {
 
     // icon = appIcons.length > 0 && appIcons[0].src ? appIcons[0].src : icon;
   }
-
-  let node;
-  let jsonDocs;
+  let jsonDocs = [];
   const jsonNodes = doc.querySelectorAll('script[type="application/ld+json"]');
   if (jsonNodes.length > 0) {
     if (url.hash && jsonNodes.length > 1) {
@@ -106,8 +104,6 @@ async function getResponseDataHTML(response, doc) {
               // Silence is Golden.
             }
           }
-
-          console.log('DATA', jsonld);
 
           const publisher = toArray(data.publisher).filter(({ name }) => !!name);
           sitename = publisher.length > 0 && publisher[0].name ? publisher[0].name : sitename;
