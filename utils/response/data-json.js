@@ -7,9 +7,11 @@ function getResponseDataJson(response, data) {
     type: 'feed',
     resource: {
       url: url.toString(),
+      canonical: data.feed_url,
       title: data.title || '',
       icon: getSafeAssetUrl(data.icon, url.toString()),
       description: data.description || '',
+      items: (data.items || []).map((item) => item.url),
     },
   };
 }

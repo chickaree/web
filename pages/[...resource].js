@@ -13,7 +13,7 @@ import Website from '../components/resource/website';
 import Layout from '../components/layout';
 import Feed from '../components/resource/feed';
 import getResponseData from '../utils/response/data';
-import Article from '../components/resource/article';
+import ResourceArticle from '../components/resource/article';
 
 const initialState = {
   type: null,
@@ -61,6 +61,9 @@ function resourceReactor(value$) {
               return EMPTY;
             }
 
+            // @TODO Redirect based on the Caonical and
+            //       get the manifest data.
+
             return from(getResponseData(response)).pipe(
               flatMap((payload) => of({
                 type: 'RESOURCE_SET',
@@ -96,7 +99,7 @@ function Resource() {
       content = <Website resource={state.resource} />;
       break;
     case 'article':
-      content = <Article resource={state.resource} />;
+      content = <ResourceArticle resource={state.resource} />;
       break;
     case 'feed':
       content = <Feed resource={state.resource} />;

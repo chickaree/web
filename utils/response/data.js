@@ -7,6 +7,8 @@ async function getResponseData(response) {
     return null;
   }
 
+  // @TODO Get data from Link headers
+
   let mimeType = response.headers.get('Content-Type').split(';').shift().trim();
   if (mimeType === 'application/json') {
     const data = await response.json();

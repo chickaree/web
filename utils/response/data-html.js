@@ -29,39 +29,43 @@ async function getResponseDataHTML(response, doc) {
   let description;
   let banner;
   let icon;
+  let manifest;
+
+  // @TODO Get the "canonical" url.
 
   const manifestHref = attribute('link[rel="manifest"]', 'href');
   if (manifestHref) {
-    const manifestURL = new URL(manifestHref, url.toString());
-    const manifest = await getManifest(manifestURL.toString());
-    sitename = manifest.name || sitename;
-    const appIcons = toArray(manifest.icons)
-      .filter((i) => !!i.sizes)
-      .map((i) => ({
-        ...i,
-        sizes: i.sizes.split(' ').map((size) => (
-          size.split('x').map((num) => parseInt(num, 10))
-        )).filter(([width, height]) => width === height).sort(([a], [b]) => a - b),
-      }))
-      .sort((a, b) => {
-        const [aSize] = a.sizes;
-        const [bSize] = b.sizes;
+    manifest = new URL(manifestHref, url.toString());
+    // @TODO Move this higher up so we aren't getting it on every result.
+    // const manifest = await getManifest(manifestURL.toString());
+    // sitename = manifest.name || sitename;
+    // const appIcons = toArray(manifest.icons)
+    //   .filter((i) => !!i.sizes)
+    //   .map((i) => ({
+    //     ...i,
+    //     sizes: i.sizes.split(' ').map((size) => (
+    //       size.split('x').map((num) => parseInt(num, 10))
+    //     )).filter(([width, height]) => width === height).sort(([a], [b]) => a - b),
+    //   }))
+    //   .sort((a, b) => {
+    //     const [aSize] = a.sizes;
+    //     const [bSize] = b.sizes;
 
-        const [aWidth] = aSize;
-        const [bWidth] = bSize;
+    //     const [aWidth] = aSize;
+    //     const [bWidth] = bSize;
 
-        if (aWidth > bWidth) {
-          return -1;
-        }
+    //     if (aWidth > bWidth) {
+    //       return -1;
+    //     }
 
-        if (bWidth > aWidth) {
-          return 1;
-        }
+    //     if (bWidth > aWidth) {
+    //       return 1;
+    //     }
 
-        return 0;
-      });
+    //     return 0;
+    //   });
 
-    icon = appIcons.length > 0 && appIcons[0].src ? appIcons[0].src : icon;
+    // icon = appIcons.length > 0 && appIcons[0].src ? appIcons[0].src : icon;
   }
 
   let node;
@@ -245,6 +249,7 @@ async function getResponseDataHTML(response, doc) {
     type,
     resource: {
       url: url.toString(),
+      manifest,
       title,
       sitename,
       description,

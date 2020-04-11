@@ -25,6 +25,8 @@ async function getResponseDataXML(response, doc) {
         url: url.toString(),
         icon: safeUrl('channel > image > url'),
         description: text('channel > description'),
+        // @TODO Implement this!
+        items: [],
       },
     };
   }
@@ -37,6 +39,8 @@ async function getResponseDataXML(response, doc) {
         url: url.toString(),
         icon: safeUrl(':root > icon'),
         description: text(':root > description') || text(':root > subtitle'),
+        // @TODO Implement this!
+        items: [],
       },
     };
   }

@@ -122,7 +122,7 @@ function feedReactor(value$) {
                 index,
               })),
             )
-          ), 2),
+          )),
           toArray(),
           map((items) => (
             items.sort((a, b) => a.index - b.index).reduce((acc, { item }) => {
