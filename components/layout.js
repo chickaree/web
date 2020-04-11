@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import Link from 'next/link';
 
 const Layout = ({ children }) => (
   <>
@@ -15,7 +16,11 @@ const Layout = ({ children }) => (
       <div className="container">
         <div className="row justify-content-center pt-1 pb-1">
           <div className="col-auto">
-            <img src="/img/icon.svg" alt="chickar.ee" />
+            <Link href="/">
+              <a>
+                <img src="/img/icon.svg" alt="chickar.ee" />
+              </a>
+            </Link>
           </div>
         </div>
       </div>
