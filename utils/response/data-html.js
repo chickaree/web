@@ -1,4 +1,4 @@
-import {  DateTime } from 'luxon';
+import { DateTime } from 'luxon';
 import getSafeAssetUrl from '../safe-asset-url';
 import getResponseUrl from '../response-url';
 import createQueryText from '../query-text';
