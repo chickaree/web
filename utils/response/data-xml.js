@@ -19,14 +19,11 @@ function createQueryAllText(doc) {
 function createQueryAllAttribute(doc) {
   return (querySelector, attribute) => {
     const nodes = doc.querySelectorAll(querySelector);
-    return [...nodes.values()].filter((n) => !!n.hasAttribute(attribute)).map((n) => n.getAttribute(attribute));
-  };
-}
-
-function createQueryAllAt(doc) {
-  return (querySelector) => {
-    const nodes = doc.querySelectorAll(querySelector);
-    return [ ...nodes.values() ].map((n) => n.textContent);
+    return [...nodes.values()].filter(
+      (n) => !!n.hasAttribute(attribute),
+    ).map(
+      (n) => n.getAttribute(attribute),
+    );
   };
 }
 
