@@ -9,12 +9,35 @@ function createSafeUrl(doc, url) {
   };
 }
 
+function createQueryAllText(doc) {
+  return (querySelector) => {
+    const nodes = doc.querySelectorAll(querySelector);
+    return [...nodes.values()].map((n) => n.textContent);
+  };
+}
+
+function createQueryAllAttribute(doc) {
+  return (querySelector, attribute) => {
+    const nodes = doc.querySelectorAll(querySelector);
+    return [...nodes.values()].filter((n) => !!n.hasAttribute(attribute)).map((n) => n.getAttribute(attribute));
+  };
+}
+
+function createQueryAllAt(doc) {
+  return (querySelector) => {
+    const nodes = doc.querySelectorAll(querySelector);
+    return [ ...nodes.values() ].map((n) => n.textContent);
+  };
+}
+
 async function getResponseDataXML(response, doc) {
   const url = getResponseUrl(response);
 
   const root = doc.documentElement.tagName;
 
   const text = createQueryText(doc);
+  const textList = createQueryAllText(doc);
+  const attributeList = createQueryAllAttribute(doc);
   const safeUrl = createSafeUrl(doc, url);
 
   if (root.toLowerCase() === 'rss') {
@@ -25,8 +48,7 @@ async function getResponseDataXML(response, doc) {
         url: url.toString(),
         icon: safeUrl('channel > image > url'),
         description: text('channel > description'),
-        // @TODO Implement this!
-        items: [],
+        items: textList('item > link'),
       },
     };
   }
@@ -39,8 +61,7 @@ async function getResponseDataXML(response, doc) {
         url: url.toString(),
         icon: safeUrl(':root > icon'),
         description: text(':root > description') || text(':root > subtitle'),
-        // @TODO Implement this!
-        items: [],
+        items: attributeList('entry > link', 'href'),
       },
     };
   }
