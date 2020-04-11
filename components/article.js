@@ -75,27 +75,31 @@ function Article({
   const { origin, host } = new URL(source);
 
   return (
-    <div className="row mb-3 mt-4">
-      <div className="col-lg-8 offset-lg-2 col">
+    <div className="row mb-3">
+      <div className="col-lg-8 offset-lg-2 col feed-item">
         <div className="card">
           <div className="card-header">
             <div className="row align-items-center">
               <Icon resource={source} src={icon} alt={sitename} />
-              <div className="col mr-auto">
-                <h5 className="mb-0">
-                  <ResourceLink resource={source}>
-                    <a>
-                      {sitename}
-                    </a>
-                  </ResourceLink>
-                </h5>
-                <h6 className="small mb-0">
-                  <ResourceLink resource={origin}>
-                    <a>{host}</a>
-                  </ResourceLink>
-                </h6>
+              <div className={icon ? 'col-11' : 'col'}>
+                <div className="row align-items-center justify-content-between">
+                  <div className="col-auto">
+                    <h5 className="mb-0">
+                      <ResourceLink resource={source}>
+                        <a>
+                          {sitename}
+                        </a>
+                      </ResourceLink>
+                    </h5>
+                    <h6 className="small mb-0">
+                      <ResourceLink resource={origin}>
+                        <a>{host}</a>
+                      </ResourceLink>
+                    </h6>
+                  </div>
+                  <DatePublished datetime={datePublished} href={url} />
+                </div>
               </div>
-              <DatePublished datetime={datePublished} href={url} />
             </div>
           </div>
           <Image href={url} src={banner} alt={title} />

@@ -59,3 +59,21 @@ img.embed-responsive-item {
     font-family: $font-family-sans-serif;
   }
 }
+
+.card-header,
+.card-body {
+  padding-left: $card-group-margin;
+  padding-right: $card-group-margin;
+}
+
+.feed-item {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+@include media-breakpoint-up('lg') {
+  .feed-item {
+    padding-left: $grid-gutter-width / 2;
+    padding-right: $grid-gutter-width / 2;
+  }
+}

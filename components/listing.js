@@ -33,7 +33,7 @@ function Listing({
   description,
 }) {
   return (
-    <div className="row mt-3">
+    <div className="row mt-3 mb-3">
       <ListingIcon src={icon} alt={title} />
       <div className="col">
         <div className="row">

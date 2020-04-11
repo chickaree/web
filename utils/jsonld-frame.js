@@ -4,6 +4,7 @@ import jsonldLoader from './jsonld-loader';
 async function jsonldFrame(json, href) {
   const data = await frame(json, {
     '@context': 'https://schema.org',
+    '@embed': '@always',
     url: {
       '@id': href,
     },
@@ -23,6 +24,7 @@ async function jsonldFrame(json, href) {
   url.protocol = 'http:';
   return frame(json, {
     '@context': 'https://schema.org',
+    '@embed': '@always',
     url: {
       '@id': url.toString(),
     },

@@ -14,7 +14,7 @@ function ResourceArticle({
   const { origin } = new URL(url);
 
   return (
-    <div className="container">
+    <div className="container mt-3">
       <Article
         source={origin}
         title={title}

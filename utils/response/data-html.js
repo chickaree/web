@@ -71,22 +71,23 @@ async function getResponseDataHTML(response, doc) {
   }
 
   let node;
+  let jsonDocs;
   const jsonNodes = doc.querySelectorAll('script[type="application/ld+json"]');
   if (jsonNodes.length > 0) {
     if (url.hash && jsonNodes.length > 1) {
       const id = url.hash.substring(1);
-      node = [...jsonNodes.values()].filter((n) => n.id === id);
+      jsonDocs = [...jsonNodes.values()].filter((n) => n.id === id).map((n) => n.textContent);
     } else {
-      [node] = jsonNodes;
+      jsonDocs = [...jsonNodes.values()].map((n) => n.textContent);
     }
   }
 
-  if (node) {
+  if (jsonDocs) {
     try {
-      const json = JSON.parse(node.textContent);
+      const docs = jsonDocs.map((json) => JSON.parse(json));
 
       // @TODO Use the canonical?
-      const jsonld = await jsonldFrame(json, url.toString());
+      const jsonld = await jsonldFrame(docs, url.toString());
 
       // @TODO Get the most "relevant"
       const data = jsonld['@graph'] ? jsonld['@graph'][0] : jsonld;
@@ -105,6 +106,8 @@ async function getResponseDataHTML(response, doc) {
               // Silence is Golden.
             }
           }
+
+          console.log('DATA', jsonld);
 
           const publisher = toArray(data.publisher).filter(({ name }) => !!name);
           sitename = publisher.length > 0 && publisher[0].name ? publisher[0].name : sitename;
