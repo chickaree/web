@@ -12,10 +12,10 @@ function createAttribute(doc) {
   };
 }
 
-async function getManifest(url) {
-  const response = await fetchResource(url).toPromise();
-  return response.json();
-}
+// async function getManifest(url) {
+//   const response = await fetchResource(url).toPromise();
+//   return response.json();
+// }
 
 async function getResponseDataHTML(response, doc) {
   const url = getResponseUrl(response);
