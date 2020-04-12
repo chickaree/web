@@ -2,11 +2,23 @@ import { encode } from 'base64url';
 import { catchError } from 'rxjs/operators';
 import { fromFetch } from 'rxjs/fetch';
 
+const supportedTypes = [
+  // @TODO Add support for activitystreams!
+  // 'application/activity+json', // Activity Streams
+  // @TODO Add support for Schema.org (or whatever)!
+  // 'application/ld+json', // Schema.org (most likely)
+  'application/json', // JSON Feeds
+  'application/rss+xml',
+  'application/xml',
+  'text/xml',
+  'text/html',
+];
+
 function fetchResource(resource, init = {}) {
   const options = {
     ...init,
     headers: {
-      Accept: 'application/activity+json, application/ld+json, application/json, application/rss+xml, application/xml, text/xml, text/html',
+      Accept: supportedTypes.join(', '),
       ...init.headers || {},
     },
   };
