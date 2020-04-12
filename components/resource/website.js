@@ -12,6 +12,7 @@ import fetchResource from '../../utils/fetch-resource';
 import Icon from '../icon';
 import Listing from '../listing';
 import getResponseData from '../../utils/response/data';
+import PageTitle from '../page-title';
 
 const concurrency = 6;
 
@@ -178,6 +179,7 @@ function Website({
 
   return (
     <>
+      <PageTitle parts={[sitename]} />
       <Banner src={banner} alt={sitename} />
       <div className={className.join(' ')}>
         <Listing title={sitename} description={description} icon={icon} />

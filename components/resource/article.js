@@ -1,4 +1,5 @@
 import Article from '../article';
+import PageTitle from '../page-title';
 
 function ResourceArticle({
   resource: {
@@ -14,18 +15,21 @@ function ResourceArticle({
   const { origin } = new URL(url);
 
   return (
-    <div className="container mt-3">
-      <Article
-        source={origin}
-        title={title}
-        url={url}
-        description={description}
-        icon={icon}
-        banner={banner}
-        sitename={sitename}
-        datePublished={datePublished}
-      />
-    </div>
+    <>
+      <PageTitle parts={[title, sitename]} />
+      <div className="container mt-3">
+        <Article
+          source={origin}
+          title={title}
+          url={url}
+          description={description}
+          icon={icon}
+          banner={banner}
+          sitename={sitename}
+          datePublished={datePublished}
+        />
+      </div>
+    </>
   );
 }
 

@@ -11,6 +11,7 @@ import Listing from '../listing';
 import fetchResource from '../../utils/fetch-resource';
 import getResponseData from '../../utils/response/data';
 import Article from '../article';
+import PageTitle from '../page-title';
 
 const concurrency = 6;
 
@@ -85,22 +86,25 @@ function Feed({
   useReactor(itemReactor, dispatch, [items]);
 
   return (
-    <div className="container">
-      <Listing title={title} description={description} icon={icon} />
-      {state.items.map((item) => (
-        <Article
-          key={item.url}
-          source={url}
-          title={item.title}
-          datePublished={item.datePublished}
-          url={item.url}
-          description={item.description}
-          icon={icon}
-          banner={item.banner}
-          sitename={title}
-        />
-      ))}
-    </div>
+    <>
+      <PageTitle parts={[title]} />
+      <div className="container">
+        <Listing title={title} description={description} icon={icon} />
+        {state.items.map((item) => (
+          <Article
+            key={item.url}
+            source={url}
+            title={item.title}
+            datePublished={item.datePublished}
+            url={item.url}
+            description={item.description}
+            icon={icon}
+            banner={item.banner}
+            sitename={title}
+          />
+        ))}
+      </div>
+    </>
   );
 }
 
