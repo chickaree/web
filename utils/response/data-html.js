@@ -6,6 +6,12 @@ import jsonldFrame from '../jsonld-frame';
 import toArray from '../to-array';
 // import fetchResource from '../fetch-resource';
 
+const supportedTypes = [
+  'website',
+  'feed',
+  'article',
+];
+
 function createAttribute(doc) {
   return (querySelector, attribute) => {
     const element = doc.querySelector(querySelector);
@@ -153,7 +159,8 @@ async function getResponseDataHTML(response, doc) {
       type = 'website';
     } else {
       type = attribute('meta[property="og:type"], meta[name="og:type"]', 'content');
-      if (!type) {
+      // If the type returned is not supported, override it to an article for now.
+      if (!supportedTypes.includes(type)) {
         type = 'article';
       }
     }
