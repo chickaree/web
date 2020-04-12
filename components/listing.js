@@ -21,7 +21,7 @@ function Description({ description }) {
   }
 
   return (
-    <div className="col-12 col-lg">
+    <div className="col-12 col-lg feed-desc">
       <p>{description}</p>
     </div>
   );
