@@ -19,4 +19,4 @@ Individual content items are prioritized in the following order:
 2. `application/ld+json` ([schema.org](https://schema.org/))
 3. `text/html`
 
-**NOTE: If a valid URL is not returned from a List, then the content embeded in the the list will be used. This is not ideal because permalinks will not available**
+**NOTE: If a valid URL is not returned from a List, then the content embeded in the the list will be used. This is not ideal because permalinks will not be available**
