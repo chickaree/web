@@ -38,6 +38,7 @@ async function getResponseDataHTML(response, doc) {
   let icon;
   let manifest;
   let datePublished;
+  let items = [];
 
   // @TODO Get the "canonical" url.
 
@@ -142,8 +143,10 @@ async function getResponseDataHTML(response, doc) {
           }
           break;
         }
+        case 'ItemList':
         case 'Website':
           type = 'website';
+          items = toArray(data.itemListElement || []).map((item) => item.url);
           break;
         default:
           break;
@@ -282,6 +285,7 @@ async function getResponseDataHTML(response, doc) {
       banner: banner ? getSafeAssetUrl(banner, url.toString()) : null,
       icon: icon ? getSafeAssetUrl(icon, url.toString()) : null,
       feeds,
+      items,
     },
   };
 }
