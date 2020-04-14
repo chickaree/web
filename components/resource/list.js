@@ -192,15 +192,16 @@ function itemReactor(value$) {
   );
 }
 
-function Website({
+function List({
   resource: {
     url,
+    title,
     sitename,
     description,
     banner,
     icon,
-    feeds,
-    items,
+    feeds = [],
+    items = [],
   },
 }) {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -221,10 +222,10 @@ function Website({
 
   return (
     <>
-      <PageTitle parts={[sitename]} />
-      <Banner src={banner} alt={sitename} />
+      <PageTitle parts={[sitename || title]} />
+      <Banner src={banner} alt={sitename || title} />
       <div className={className.join(' ')}>
-        <Listing title={sitename} description={description} icon={icon} />
+        <Listing title={sitename || title} description={description} icon={icon} />
         <FeedList feeds={state.feeds} />
         {state.items.map((item) => (
           <Article
@@ -236,7 +237,7 @@ function Website({
             description={item.description}
             icon={icon}
             banner={item.banner}
-            sitename={sitename}
+            sitename={sitename || title}
           />
         ))}
       </div>
@@ -244,4 +245,4 @@ function Website({
   );
 }
 
-export default Website;
+export default List;
