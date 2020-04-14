@@ -14,7 +14,7 @@ Lists of content are prioritized in the following order:
 8. `text/html`
 
 ## Items
-Individual content items are prioritized in the following order:
+Individual content items are prioritized in the following orde  r:
 1.  ~~`application/activity+json`~~ (not yet implemented)
 2. `application/ld+json` ([schema.org](https://schema.org/))
 3. `text/html`

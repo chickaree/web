@@ -143,6 +143,13 @@ async function getResponseDataHTML(response, doc) {
           }
           break;
         }
+        // @TODO Figure out subtypes.
+        case 'WebPage':
+          type = 'website';
+          if (data.mainEntity) {
+            items = toArray(data.mainEntity.itemListElement || []).map((item) => item.url);
+          }
+          break;
         case 'ItemList':
         case 'Website':
           type = 'website';

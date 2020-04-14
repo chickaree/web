@@ -9,9 +9,8 @@ import { switchMap, filter, flatMap } from 'rxjs/operators';
 import getResourceLinkData from '../utils/resource-link-data';
 import fetchResource from '../utils/fetch-resource';
 import getResponseUrl from '../utils/response-url';
-import Website from '../components/resource/website';
+import List from '../components/resource/list';
 import Layout from '../components/layout';
-import Feed from '../components/resource/feed';
 import getResponseData from '../utils/response/data';
 import ResourceArticle from '../components/resource/article';
 
@@ -96,13 +95,11 @@ function Resource() {
   let content;
   switch (state.type) {
     case 'website':
-      content = <Website resource={state.resource} />;
+    case 'feed':
+      content = <List resource={state.resource} />;
       break;
     case 'article':
       content = <ResourceArticle resource={state.resource} />;
-      break;
-    case 'feed':
-      content = <Feed resource={state.resource} />;
       break;
     default:
       content = null;

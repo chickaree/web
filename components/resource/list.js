@@ -1,5 +1,5 @@
 import { useReducer } from 'react';
-import { from, concat, of } from 'rxjs';
+import { from, of } from 'rxjs';
 import {
   switchMap,
   flatMap,
@@ -13,6 +13,7 @@ import Icon from '../icon';
 import Listing from '../listing';
 import getResponseData from '../../utils/response/data';
 import PageTitle from '../page-title';
+import Article from '../article';
 
 const concurrency = 6;
 
@@ -52,7 +53,7 @@ function FeedDescription({ description }) {
   );
 }
 
-function FeedList({ feeds: feedList, hasIcon }) {
+function FeedList({ feeds: feedList }) {
   if (!feedList || !feedList.length) {
     return null;
   }
@@ -67,7 +68,7 @@ function FeedList({ feeds: feedList, hasIcon }) {
 
   return (
     <div className="row mb-3">
-      <div className={hasIcon ? 'col-lg-10 offset-lg-2 col' : 'col'}>
+      <div className="col-lg-8 offset-lg-2 col">
         <div className="card">
           <ol className="list-group list-group-flush">
             {feeds.map((feed) => (
@@ -94,6 +95,7 @@ function FeedList({ feeds: feedList, hasIcon }) {
 
 const initialState = {
   feeds: [],
+  items: [],
 };
 
 function reducer(state, action) {
@@ -102,6 +104,11 @@ function reducer(state, action) {
       return {
         ...state,
         feeds: action.payload,
+      };
+    case 'ITEMS_SET':
+      return {
+        ...state,
+        items: action.payload,
       };
     case 'RESET':
       return initialState;
@@ -114,40 +121,72 @@ function reducer(state, action) {
 function feedReactor(value$) {
   return value$.pipe(
     switchMap(([feeds]) => (
-      concat(
-        of({ type: 'RESET' }),
-        from(feeds).pipe(
-          flatMap((href, index) => (
-            fetchResource(href).pipe(
-              flatMap((response) => getResponseData(response)),
-              flatMap((item) => of({
-                item,
-                index,
-              })),
-            )
-          ), undefined, concurrency),
-          // @TODO Render as they come in (group by tick), but sort by date in the reducer.
-          toArray(),
-          map((items) => (
-            items.sort((a, b) => a.index - b.index).reduce((acc, { item }) => {
-              if (!item) {
-                return acc;
-              }
+      from(feeds).pipe(
+        flatMap((href, index) => (
+          fetchResource(href).pipe(
+            flatMap((response) => getResponseData(response)),
+            flatMap((item) => of({
+              item,
+              index,
+            })),
+          )
+        ), undefined, concurrency),
+        // @TODO Render as they come in (group by tick), but sort by date in the reducer.
+        toArray(),
+        map((items) => (
+          items.sort((a, b) => a.index - b.index).reduce((acc, { item }) => {
+            if (!item) {
+              return acc;
+            }
 
-              if (item.type !== 'feed') {
-                return acc;
-              }
+            if (item.type !== 'feed') {
+              return acc;
+            }
 
-              return {
-                ...acc,
-                payload: [
-                  ...acc.payload,
-                  item.resource,
-                ],
-              };
-            }, { type: 'FEEDS_SET', payload: [] })
-          )),
-        ),
+            return {
+              ...acc,
+              payload: [
+                ...acc.payload,
+                item.resource,
+              ],
+            };
+          }, { type: 'FEEDS_SET', payload: [] })
+        )),
+      )
+    )),
+  );
+}
+
+function itemReactor(value$) {
+  return value$.pipe(
+    switchMap(([items]) => (
+      from(items).pipe(
+        flatMap((href, index) => (
+          fetchResource(href).pipe(
+            flatMap((response) => getResponseData(response)),
+            flatMap((item) => of({
+              item,
+              index,
+            })),
+          )
+        ), undefined, concurrency),
+        toArray(),
+        map((feedItems) => ({
+          type: 'ITEMS_SET',
+          payload: [...feedItems.sort((a, b) => a.index - b.index).reduce((acc, { item }) => {
+            if (!item) {
+              return acc;
+            }
+
+            if (item.type !== 'article') {
+              return acc;
+            }
+
+            acc.set(item.resource.url, item.resource);
+
+            return acc;
+          }, new Map()).values()],
+        })),
       )
     )),
   );
@@ -155,16 +194,19 @@ function feedReactor(value$) {
 
 function Website({
   resource: {
+    url,
     sitename,
     description,
     banner,
     icon,
     feeds,
+    items,
   },
 }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useReactor(feedReactor, dispatch, [feeds]);
+  useReactor(itemReactor, dispatch, [items]);
 
   let className = [
     'container',
@@ -183,7 +225,20 @@ function Website({
       <Banner src={banner} alt={sitename} />
       <div className={className.join(' ')}>
         <Listing title={sitename} description={description} icon={icon} />
-        <FeedList feeds={state.feeds} hasIcon={!!icon} />
+        <FeedList feeds={state.feeds} />
+        {state.items.map((item) => (
+          <Article
+            key={item.url}
+            source={url}
+            title={item.title}
+            datePublished={item.datePublished}
+            url={item.url}
+            description={item.description}
+            icon={icon}
+            banner={item.banner}
+            sitename={sitename}
+          />
+        ))}
       </div>
     </>
   );
