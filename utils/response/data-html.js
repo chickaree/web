@@ -205,7 +205,10 @@ async function getResponseDataHTML(response, doc) {
   }
 
   if (!datePublished) {
-    datePublished = attribute('meta[property="article:published_time"], meta[name="article:published_time"]', 'content');
+    const datetime = attribute('meta[property="article:published_time"], meta[name="article:published_time"]', 'content');
+    if (datetime) {
+      datePublished = DateTime.fromISO(datetime, { zone: 'utc' }).toISO();
+    }
   }
 
   if (!icon) {

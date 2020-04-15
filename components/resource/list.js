@@ -5,7 +5,10 @@ import {
   flatMap,
   toArray,
   map,
+  bufferTime,
+  filter,
 } from 'rxjs/operators';
+import { DateTime } from 'luxon';
 import useReactor from '@cinematix/reactor';
 import ResourceLink from '../resource-link';
 import fetchResource from '../../utils/fetch-resource';
@@ -15,8 +18,6 @@ import getResponseData from '../../utils/response/data';
 import PageTitle from '../page-title';
 import Article from '../article';
 
-const concurrency = 6;
-
 function Banner({ src, alt }) {
   if (!src) {
     return null;
@@ -24,7 +25,7 @@ function Banner({ src, alt }) {
 
   return (
     <div className="embed-responsive embed-responsive-21by9">
-      <img src={src} alt={alt} className="embed-responsive-item" />
+      <img src={src} alt={alt} className="embed-responsive-item" loading="lazy" />
     </div>
   );
 }
@@ -105,10 +106,26 @@ function reducer(state, action) {
         ...state,
         feeds: action.payload,
       };
-    case 'ITEMS_SET':
+    case 'ITEMS_ADD':
       return {
         ...state,
-        items: action.payload,
+        items: [...[
+          ...state.items,
+          ...action.payload,
+        ].reduce((acc, item) => {
+          acc.set(item.url, item);
+
+          return acc;
+        }, new Map()).values()].sort((a, b) => {
+          const aDateTime = a.datePublished
+            ? DateTime.fromISO(a.datePublished)
+            : DateTime.fromMillis(0);
+          const bDateTime = b.datePublished
+            ? DateTime.fromISO(b.datePublished)
+            : DateTime.fromMillis(0);
+
+          return bDateTime.diff(aDateTime);
+        }),
       };
     case 'RESET':
       return initialState;
@@ -130,7 +147,7 @@ function feedReactor(value$) {
               index,
             })),
           )
-        ), undefined, concurrency),
+        )),
         // @TODO Render as they come in (group by tick), but sort by date in the reducer.
         toArray(),
         map((items) => (
@@ -161,19 +178,17 @@ function itemReactor(value$) {
   return value$.pipe(
     switchMap(([items]) => (
       from(items).pipe(
-        flatMap((href, index) => (
+        flatMap((href) => (
           fetchResource(href).pipe(
             flatMap((response) => getResponseData(response)),
-            flatMap((item) => of({
-              item,
-              index,
-            })),
           )
-        ), undefined, concurrency),
-        toArray(),
+        )),
+        // Group by tick.
+        bufferTime(0),
+        filter((a) => a.length > 0),
         map((feedItems) => ({
-          type: 'ITEMS_SET',
-          payload: [...feedItems.sort((a, b) => a.index - b.index).reduce((acc, { item }) => {
+          type: 'ITEMS_ADD',
+          payload: [...feedItems.reduce((acc, item) => {
             if (!item) {
               return acc;
             }

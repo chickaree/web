@@ -9,7 +9,7 @@ function Image({ href, src, alt }) {
   return (
     <div className="embed-responsive embed-responsive-16by9">
       <a href={href}>
-        <img src={src} alt={alt} className="embed-responsive-item" />
+        <img src={src} alt={alt} className="embed-responsive-item" loading="lazy" />
       </a>
     </div>
   );
@@ -33,10 +33,10 @@ function Icon({
   }
 
   return (
-    <div className="col-1">
+    <div className="col-2 col-md-1">
       <ResourceLink resource={resource}>
         <a>
-          <img src={src} alt={alt} className="w-100" />
+          <img src={src} alt={alt} className="w-100" loading="lazy" />
         </a>
       </ResourceLink>
     </div>
@@ -83,7 +83,7 @@ function Article({
           <div className="card-header">
             <div className="row align-items-center">
               <Icon resource={source} src={icon} alt={sitename} />
-              <div className={icon ? 'col-11' : 'col'}>
+              <div className={icon ? 'col-10 col-md-11' : 'col'}>
                 <div className="row align-items-center justify-content-between">
                   <div className="col-auto">
                     <h5 className="mb-0">

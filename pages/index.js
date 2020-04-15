@@ -22,7 +22,7 @@ function Index() {
       <div className="container">
         <div className="landing row justify-content-center align-items-center min-vh-100">
           <div className="col-12 col-sm-9 col-md-6 col-lg-4">
-            <img src="/img/logo.svg" alt="chickar.ee" className="d-block w-100" />
+            <img src="/img/logo.svg" alt="chickar.ee" className="d-block w-100" loading="lazy" />
           </div>
         </div>
       </div>
