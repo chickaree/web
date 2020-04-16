@@ -33,10 +33,10 @@ function Icon({
   }
 
   return (
-    <div className="col-2 col-md-1">
+    <div className="col-2 col-md-1 pr-0">
       <ResourceLink resource={resource}>
-        <a>
-          <img src={src} alt={alt} className="w-100" loading="lazy" />
+        <a className="embed-responsive embed-responsive-1by1">
+          <img src={src} alt={alt} className="embed-responsive-item" loading="lazy" />
         </a>
       </ResourceLink>
     </div>
@@ -52,7 +52,7 @@ function DatePublished({
   }
 
   return (
-    <div className="col-auto">
+    <div className="col text-right">
       <time dateTime={datetime} className="small">
         <ResourceLink resource={href}>
           <a>
@@ -85,7 +85,7 @@ function Article({
               <Icon resource={source} src={icon} alt={sitename} />
               <div className={icon ? 'col-10 col-md-11' : 'col'}>
                 <div className="row align-items-center justify-content-between">
-                  <div className="col-auto">
+                  <div className="col">
                     <h5 className="mb-0">
                       <ResourceLink resource={source}>
                         <a>

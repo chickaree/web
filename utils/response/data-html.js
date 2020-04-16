@@ -92,10 +92,14 @@ async function getResponseDataHTML(response, doc) {
       const docs = jsonDocs.map((json) => JSON.parse(json));
 
       // @TODO Use the canonical?
-      const jsonld = await jsonldFrame(docs, url.toString());
+      const jsonld = await jsonldFrame(docs, {
+        mainEntityOfPage: url.toString(),
+        mainEntity: {},
+      });
 
       // @TODO Get the most "relevant"
       const data = jsonld['@graph'] ? jsonld['@graph'][0] : jsonld;
+
       switch (data.type) {
         case 'Article':
         case 'BlogPosting':
@@ -154,6 +158,25 @@ async function getResponseDataHTML(response, doc) {
         case 'Website':
           type = 'website';
           items = toArray(data.itemListElement || []).map((item) => item.url);
+          if (data.mainEntityOfPage) {
+            const publisher = data.mainEntityOfPage.publisher || {};
+            if (publisher.id) {
+              const publisherEntity = await jsonldFrame(docs, {
+                id: publisher.id,
+              });
+
+              sitename = publisherEntity.name || sitename;
+              description = publisherEntity.description || description;
+              if (publisherEntity.image) {
+                if (typeof publisherEntity.image === 'string') {
+                  icon = publisherEntity.image.url || icon;
+                } else {
+                  icon = publisherEntity.image.url || icon;
+                }
+                icon = publisherEntity.image.url || icon;
+              }
+            }
+          }
           break;
         default:
           break;
