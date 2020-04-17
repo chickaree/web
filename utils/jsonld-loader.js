@@ -1,4 +1,5 @@
-import schema from '../contexts/schema.json';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import schema from 'schemaorg/data/releases/7.03/schemaorgcontext.jsonld?json';
 
 const CONTEXTS = new Map([
   ['schema.org', schema],

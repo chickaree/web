@@ -4,6 +4,7 @@ import getResponseUrl from '../response-url';
 import createQueryText from '../query-text';
 import jsonldFrame from '../jsonld-frame';
 import toArray from '../to-array';
+import { Article, WebPage, ItemList } from '../../tree/schema';
 // import fetchResource from '../fetch-resource';
 
 const supportedTypes = [
@@ -41,6 +42,10 @@ async function getResponseDataHTML(response, doc) {
   let items = [];
 
   // @TODO Get the "canonical" url.
+
+  function intersection(a, b) {
+    return a.filter((x) => b.includes(x));
+  }
 
   const manifestHref = attribute('link[rel="manifest"]', 'href');
   if (manifestHref) {
@@ -100,91 +105,89 @@ async function getResponseDataHTML(response, doc) {
       // @TODO Get the most "relevant"
       const data = jsonld['@graph'] ? jsonld['@graph'][0] : jsonld;
 
-      switch (data.type) {
-        case 'Article':
-        case 'BlogPosting':
-        case 'NewsArticle': {
-          type = 'article';
-          title = data.name || data.headline || title;
-          description = data.description || data.headline || description;
+      if (intersection(toArray(data.type), Article).length) {
+        type = 'article';
+        title = data.name || data.headline || title;
+        description = data.description || data.headline || description;
 
-          if (data.datePublished) {
-            try {
-              datePublished = DateTime.fromISO(data.datePublished, { zone: 'utc' }).toISO();
-            } catch (e) {
-              // Silence is Golden.
-            }
+        if (data.datePublished) {
+          try {
+            datePublished = DateTime.fromISO(data.datePublished, { zone: 'utc' }).toISO();
+          } catch (e) {
+            // Silence is Golden.
           }
-
-          const publisher = toArray(data.publisher).filter(({ name }) => !!name);
-          sitename = publisher.length > 0 && publisher[0].name ? publisher[0].name : sitename;
-
-          const ratio = 16 / 9;
-          const image = toArray(data.image).filter((i) => typeof i !== 'string' || !!i.url).sort((a, b) => {
-            if (!a.width || !b.width) {
-              return 0;
-            }
-
-            if (!a.height || !b.height) {
-              return 0;
-            }
-
-            const aRatio = a.width / a.height;
-            const bRatio = b.width / b.height;
-
-            const aDiff = aRatio > ratio ? aRatio - ratio : ratio - aRatio;
-            const bDiff = bRatio > ratio ? bRatio - ratio : ratio - bRatio;
-
-            return aDiff - bDiff;
-          });
-
-          if (image.length > 0) {
-            if (typeof image[0] === 'string') {
-              [banner] = image;
-            } else if (image[0].url) {
-              banner = image[0].url;
-            }
-          }
-          break;
         }
-        // @TODO Figure out subtypes.
-        case 'WebPage':
-          type = 'website';
-          if (data.mainEntity) {
-            items = toArray(data.mainEntity.itemListElement || []).map((item) => item.url);
-          }
-          break;
-        case 'ItemList':
-        case 'Website':
-          type = 'website';
-          items = toArray(data.itemListElement || []).map((item) => item.url);
-          if (data.mainEntityOfPage) {
-            const publisher = data.mainEntityOfPage.publisher || {};
-            if (publisher.id) {
-              const publisherEntity = await jsonldFrame(docs, {
-                id: publisher.id,
-              });
 
-              sitename = publisherEntity.name || sitename;
-              description = publisherEntity.description || description;
-              if (publisherEntity.image) {
-                if (typeof publisherEntity.image === 'string') {
-                  icon = publisherEntity.image.url || icon;
-                } else {
-                  icon = publisherEntity.image.url || icon;
-                }
+        const publisher = toArray(data.publisher).filter(({ name }) => !!name);
+        sitename = publisher.length > 0 && publisher[0].name ? publisher[0].name : sitename;
+
+        const ratio = 16 / 9;
+        const image = toArray(data.image).filter((i) => typeof i !== 'string' || !!i.url).sort((a, b) => {
+          if (!a.width || !b.width) {
+            return 0;
+          }
+
+          if (!a.height || !b.height) {
+            return 0;
+          }
+
+          const aRatio = a.width / a.height;
+          const bRatio = b.width / b.height;
+
+          const aDiff = aRatio > ratio ? aRatio - ratio : ratio - aRatio;
+          const bDiff = bRatio > ratio ? bRatio - ratio : ratio - bRatio;
+
+          return aDiff - bDiff;
+        });
+
+        if (image.length > 0) {
+          if (typeof image[0] === 'string') {
+            [banner] = image;
+          } else if (image[0].url) {
+            banner = image[0].url;
+          }
+        }
+      }
+
+      if (intersection(toArray(data.type), WebPage).length) {
+        type = 'website';
+        if (data.mainEntity) {
+          items = toArray(data.mainEntity.itemListElement || []).map((item) => item.url);
+        }
+      }
+
+      if (intersection(toArray(data.type), ItemList).length) {
+        type = 'website';
+        items = toArray(data.itemListElement || []).map((item) => item.url);
+        if (data.mainEntityOfPage) {
+          // @TODO Get multiple publishers.
+          const publisher = data.mainEntityOfPage.publisher || {};
+          if (publisher.id) {
+            const publisherEntity = await jsonldFrame(docs, {
+              id: publisher.id,
+            });
+
+            sitename = publisherEntity.name || sitename;
+            description = publisherEntity.description || description;
+            // @TODO Get the icon that is most square.
+            if (publisherEntity.image) {
+              if (typeof publisherEntity.image === 'string') {
+                icon = publisherEntity.image.url || icon;
+              } else {
                 icon = publisherEntity.image.url || icon;
               }
+              icon = publisherEntity.image.url || icon;
             }
           }
-          break;
-        default:
-          break;
+        }
       }
     } catch (e) {
+      console.log('ERROR', e);
       // Silence is Golden.
     }
   }
+
+  console.log('TYPE', type);
 
   if (!type) {
     // If it's the root of the site, always assume it's a website.
