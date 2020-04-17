@@ -105,6 +105,10 @@ async function getResponseDataHTML(response, doc) {
       // @TODO Get the most "relevant"
       const data = jsonld['@graph'] ? jsonld['@graph'][0] : jsonld;
 
+      console.log('jSONLD', jsonld);
+
+      console.log('INTERSECTION', intersection(toArray(data.type), Article));
+
       if (intersection(toArray(data.type), Article).length) {
         type = 'article';
         title = data.name || data.headline || title;
@@ -116,6 +120,29 @@ async function getResponseDataHTML(response, doc) {
           } catch (e) {
             // Silence is Golden.
           }
+        }
+
+        if (data.publisher) {
+          const publishers = await jsonldFrame(docs, {
+            id: toArray(data.publisher).map((p) => p.id),
+          });
+
+          // What do we do if there is more than one?
+          const publisher = publishers['@graph'] ? publishers['@graph'][0] : publishers;
+
+          sitename = publisher.name || sitename;
+          description = publisher.description || description;
+          // @TODO Get the icon that is most square.
+          if (publisher.image) {
+            if (typeof publisher.image === 'string') {
+              icon = publisher.image || icon;
+            } else {
+              icon = publisher.image.url || icon;
+            }
+          }
+
+          console.log('PUBLISHER', publisher);
+
         }
 
         const publisher = toArray(data.publisher).filter(({ name }) => !!name);
@@ -170,12 +197,9 @@ async function getResponseDataHTML(response, doc) {
             sitename = publisherEntity.name || sitename;
             description = publisherEntity.description || description;
             // @TODO Get the icon that is most square.
-            if (publisherEntity.image) {
-              if (typeof publisherEntity.image === 'string') {
-                icon = publisherEntity.image.url || icon;
-              } else {
-                icon = publisherEntity.image.url || icon;
-              }
+            if (typeof publisherEntity.image === 'string') {
+              icon = publisherEntity.image || icon;
+            } else {
               icon = publisherEntity.image.url || icon;
             }
           }
