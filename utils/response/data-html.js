@@ -105,10 +105,6 @@ async function getResponseDataHTML(response, doc) {
       // @TODO Get the most "relevant"
       const data = jsonld['@graph'] ? jsonld['@graph'][0] : jsonld;
 
-      console.log('jSONLD', jsonld);
-
-      console.log('INTERSECTION', intersection(toArray(data.type), Article));
-
       if (intersection(toArray(data.type), Article).length) {
         type = 'article';
         title = data.name || data.headline || title;
@@ -140,13 +136,7 @@ async function getResponseDataHTML(response, doc) {
               icon = publisher.image.url || icon;
             }
           }
-
-          console.log('PUBLISHER', publisher);
-
         }
-
-        const publisher = toArray(data.publisher).filter(({ name }) => !!name);
-        sitename = publisher.length > 0 && publisher[0].name ? publisher[0].name : sitename;
 
         const ratio = 16 / 9;
         const image = toArray(data.image).filter((i) => typeof i !== 'string' || !!i.url).sort((a, b) => {
