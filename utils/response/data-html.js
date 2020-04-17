@@ -182,12 +182,9 @@ async function getResponseDataHTML(response, doc) {
         }
       }
     } catch (e) {
-      console.log('ERROR', e);
       // Silence is Golden.
     }
   }
-
-  console.log('TYPE', type);
 
   if (!type) {
     // If it's the root of the site, always assume it's a website.
