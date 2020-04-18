@@ -20,6 +20,63 @@ function createAttribute(doc) {
   };
 }
 
+function intersection(a, b) {
+  return a.filter((x) => b.includes(x));
+}
+
+function getBestImages(data, ratio) {
+  return toArray(data || []).filter((i) => typeof i !== 'string' || !!i.url).sort((a, b) => {
+    if (!a.width || !b.width) {
+      return 0;
+    }
+
+    if (!a.height || !b.height) {
+      return 0;
+    }
+
+    const aRatio = a.width / a.height;
+    const bRatio = b.width / b.height;
+
+    const aDiff = aRatio > ratio ? aRatio - ratio : ratio - aRatio;
+    const bDiff = bRatio > ratio ? bRatio - ratio : ratio - bRatio;
+
+    return aDiff - bDiff;
+  }).reduce((acc, img) => {
+    // Remove any images that do not fit the ratio of the first image.
+    if (acc.length === 0) {
+      return [
+        img,
+      ];
+    }
+
+    if (!acc[0].width || !acc[0].height) {
+      return [
+        ...acc,
+        img,
+      ];
+    }
+
+    const firstRatio = acc[0].width / acc[0].height;
+    const currRatio = img.width / img.height;
+
+    if (firstRatio !== currRatio) {
+      return acc;
+    }
+
+    return [
+      ...acc,
+      img,
+    ];
+  }, [])
+    .sort((a, b) => {
+      if (!a.width || !b.width) {
+        return 0;
+      }
+
+      return a.width - b.width;
+    });
+}
+
 // async function getManifest(url) {
 //   const response = await fetchResource(url).toPromise();
 //   return response.json();
@@ -41,11 +98,7 @@ async function getResponseDataHTML(response, doc) {
   let datePublished;
   let items = [];
 
-  // @TODO Get the "canonical" url.
-
-  function intersection(a, b) {
-    return a.filter((x) => b.includes(x));
-  }
+  // @TODO Get the "canonical" url
 
   const manifestHref = attribute('link[rel="manifest"]', 'href');
   if (manifestHref) {
@@ -81,6 +134,24 @@ async function getResponseDataHTML(response, doc) {
 
     // icon = appIcons.length > 0 && appIcons[0].src ? appIcons[0].src : icon;
   }
+
+  if (!icon) {
+    const icons = [...head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').values()].filter((element) => !!element.hasAttribute('href'))
+      .sort((a, b) => {
+      // Prefer larger.
+        if (!a.hasAttribute('sizes') || !b.hasAttribute('sizes')) {
+          return 0;
+        }
+
+        const aSize = parseInt(a.getAttribute('sizes').split('x')[0], 10);
+        const bSize = parseInt(b.getAttribute('sizes').split('x')[0], 10);
+
+        return bSize - aSize;
+      }).map((link) => link.getAttribute('href'));
+
+    icon = icons.length > 0 ? icons[0] : icon;
+  }
+
   let jsonDocs = [];
   const jsonNodes = doc.querySelectorAll('script[type="application/ld+json"]');
   if (jsonNodes.length > 0) {
@@ -102,72 +173,19 @@ async function getResponseDataHTML(response, doc) {
         mainEntity: {},
       });
 
-      // @TODO Get the most "relevant"
+      // @TODO Get the most "relevant"? or maybe concatenate everything?
       const data = jsonld['@graph'] ? jsonld['@graph'][0] : jsonld;
+
+      let mainCreativeWork;
 
       if (intersection(toArray(data.type), Article).length) {
         type = 'article';
-        title = data.name || data.headline || title;
-        description = data.description || data.headline || description;
-
-        if (data.datePublished) {
-          try {
-            datePublished = DateTime.fromISO(data.datePublished, { zone: 'utc' }).toISO();
-          } catch (e) {
-            // Silence is Golden.
-          }
-        }
-
-        if (data.publisher) {
-          const publishers = await jsonldFrame(docs, {
-            id: toArray(data.publisher).map((p) => p.id),
-          });
-
-          // What do we do if there is more than one?
-          const publisher = publishers['@graph'] ? publishers['@graph'][0] : publishers;
-
-          sitename = publisher.name || sitename;
-          description = publisher.description || description;
-          // @TODO Get the icon that is most square.
-          if (publisher.image) {
-            if (typeof publisher.image === 'string') {
-              icon = publisher.image || icon;
-            } else {
-              icon = publisher.image.url || icon;
-            }
-          }
-        }
-
-        const ratio = 16 / 9;
-        const image = toArray(data.image).filter((i) => typeof i !== 'string' || !!i.url).sort((a, b) => {
-          if (!a.width || !b.width) {
-            return 0;
-          }
-
-          if (!a.height || !b.height) {
-            return 0;
-          }
-
-          const aRatio = a.width / a.height;
-          const bRatio = b.width / b.height;
-
-          const aDiff = aRatio > ratio ? aRatio - ratio : ratio - aRatio;
-          const bDiff = bRatio > ratio ? bRatio - ratio : ratio - bRatio;
-
-          return aDiff - bDiff;
-        });
-
-        if (image.length > 0) {
-          if (typeof image[0] === 'string') {
-            [banner] = image;
-          } else if (image[0].url) {
-            banner = image[0].url;
-          }
-        }
+        mainCreativeWork = data;
       }
 
       if (intersection(toArray(data.type), WebPage).length) {
         type = 'website';
+        mainCreativeWork = data;
         if (data.mainEntity) {
           items = toArray(data.mainEntity.itemListElement || []).map((item) => item.url);
         }
@@ -177,21 +195,66 @@ async function getResponseDataHTML(response, doc) {
         type = 'website';
         items = toArray(data.itemListElement || []).map((item) => item.url);
         if (data.mainEntityOfPage) {
-          // @TODO Get multiple publishers.
-          const publisher = data.mainEntityOfPage.publisher || {};
-          if (publisher.id) {
-            const publisherEntity = await jsonldFrame(docs, {
-              id: publisher.id,
-            });
+          mainCreativeWork = data.mainEntityOfPage;
+        }
+      }
 
-            sitename = publisherEntity.name || sitename;
-            description = publisherEntity.description || description;
-            // @TODO Get the icon that is most square.
-            if (typeof publisherEntity.image === 'string') {
-              icon = publisherEntity.image || icon;
-            } else {
-              icon = publisherEntity.image.url || icon;
+      if (mainCreativeWork) {
+        title = mainCreativeWork.name || mainCreativeWork.headline || title;
+        description = mainCreativeWork.description || mainCreativeWork.headline || description;
+
+        if (data.datePublished) {
+          try {
+            datePublished = DateTime.fromISO(data.datePublished, { zone: 'utc' }).toISO();
+          } catch (e) {
+            // Silence is Golden.
+          }
+        }
+
+        if (mainCreativeWork.publisher) {
+          const publishers = await jsonldFrame(docs, {
+            id: toArray(mainCreativeWork.publisher).map((p) => p.id),
+          });
+
+          // What do we do if there is more than one?
+          // Maybe use Intl.ListFormat and a pollyfill?
+          const publisher = publishers['@graph'] ? publishers['@graph'][0] : publishers;
+
+          sitename = publisher.name || sitename;
+          description = publisher.description || description;
+          // @TODO Should this be image if it's a Person and... logo if it's an org?
+          const publisherImage = getBestImages([
+            ...toArray(publisher.logo || []),
+            ...toArray(publisher.brand && publisher.brand.logo ? publisher.brand.logo : []),
+            ...toArray(publisher.image || []),
+          ], 1);
+
+          // @TODO Use response images... somehow.
+          if (publisherImage.length > 0) {
+            if (typeof publisherImage[0] === 'string') {
+              [icon] = publisherImage;
+            } else if (publisherImage[0].url) {
+              // Only override an existing icon if the width & height are a 1:1 ratio.
+              if (icon) {
+                if (publisherImage[0].width / publisherImage[0].height === 1) {
+                  icon = publisherImage[0].url;
+                }
+              } else {
+                icon = publisherImage[0].url;
+              }
             }
+          }
+        }
+
+        const ratio = type === 'website' ? 21 / 9 : 16 / 9;
+        const image = getBestImages(mainCreativeWork.image, ratio);
+
+        // @TODO Use response images... somehow.
+        if (image.length > 0) {
+          if (typeof image[0] === 'string') {
+            [banner] = image;
+          } else if (image[0].url) {
+            banner = image[0].url;
           }
         }
       }
@@ -246,23 +309,6 @@ async function getResponseDataHTML(response, doc) {
     if (datetime) {
       datePublished = DateTime.fromISO(datetime, { zone: 'utc' }).toISO();
     }
-  }
-
-  if (!icon) {
-    const icons = [...head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').values()].filter((element) => !!element.hasAttribute('href'))
-      .sort((a, b) => {
-      // Prefer larger.
-        if (!a.hasAttribute('sizes') || !b.hasAttribute('sizes')) {
-          return 0;
-        }
-
-        const aSize = parseInt(a.getAttribute('sizes').split('x')[0], 10);
-        const bSize = parseInt(b.getAttribute('sizes').split('x')[0], 10);
-
-        return bSize - aSize;
-      }).map((link) => link.getAttribute('href'));
-
-    icon = icons.length > 0 ? icons[0] : icon;
   }
 
   const feeds = [...head.querySelectorAll('link[rel="alternate"]').values()].map((link, index) => ({
