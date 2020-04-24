@@ -13,7 +13,6 @@ import useReactor from '@cinematix/reactor';
 import ResourceLink from '../resource-link';
 import fetchResource from '../../utils/fetch-resource';
 import Icon from '../icon';
-import Listing from '../listing';
 import getResponseData from '../../utils/response/data';
 import PageTitle from '../page-title';
 import Article from '../article';
@@ -44,6 +43,33 @@ function FeedIcon({ href, src, alt }) {
   );
 }
 
+function CollectionIcon({ src, alt, className }) {
+  if (!src) {
+    return null;
+  }
+
+  return (
+    <div className={className}>
+      <div className="icon">
+        <Icon src={src} alt={alt} />
+      </div>
+    </div>
+  );
+}
+
+
+function Description({ description }) {
+  if (!description) {
+    return null;
+  }
+
+  return (
+    <div className="col-12 col-lg feed-desc">
+      <p>{description}</p>
+    </div>
+  );
+}
+
 function FeedDescription({ description }) {
   if (!description) {
     return null;
@@ -69,7 +95,7 @@ function FeedList({ feeds: feedList }) {
 
   return (
     <div className="row mb-3">
-      <div className="col-lg-8 offset-lg-2 col">
+      <div className="col feed-item">
         <div className="card">
           <ol className="list-group list-group-flush">
             {feeds.map((feed) => (
@@ -207,7 +233,7 @@ function itemReactor(value$) {
   );
 }
 
-function List({
+function Collection({
   resource: {
     url,
     title,
@@ -235,29 +261,61 @@ function List({
     ];
   }
 
+  if (icon) {
+    className = [
+      ...className,
+      'has-icon',
+    ];
+  }
+
   return (
     <>
       <PageTitle parts={[sitename || title]} />
       <Banner src={banner} alt={sitename || title} />
       <div className={className.join(' ')}>
-        <Listing title={sitename || title} description={description} icon={icon} />
-        <FeedList feeds={state.feeds} />
-        {state.items.map((item) => (
-          <Article
-            key={item.url}
-            source={url}
-            title={item.title}
-            datePublished={item.datePublished}
-            url={item.url}
-            description={item.description}
-            icon={icon}
-            banner={item.banner}
-            sitename={sitename || title}
-          />
-        ))}
+        <div className="row mt-3 mb-3 d-flex d-lg-none">
+          <CollectionIcon src={icon} alt={sitename || title} className="col-4" />
+          <div className={icon ? 'col' : 'col-lg-8 offset-lg-2 col'}>
+            <div className="row">
+              <div className="col-12 col-lg-auto">
+                <h2>{sitename || title}</h2>
+              </div>
+              <Description description={description} />
+            </div>
+          </div>
+        </div>
+        <div className="row mt-3 mb-3">
+          <CollectionIcon src={icon} alt={sitename || title} className="col-lg-2 d-lg-block d-none" />
+          <div className={icon ? 'col-lg-10 col' : 'col-lg-8 offset-lg-2 col'}>
+            <div className="row d-none d-lg-flex">
+              <div className="col-12 col-lg-auto">
+                <h2>{sitename || title}</h2>
+              </div>
+              <Description description={description} />
+            </div>
+            <div className="row">
+              <div className="collection col">
+                <FeedList feeds={state.feeds} />
+                {state.items.map((item) => (
+                  <Article
+                    key={item.url}
+                    source={url}
+                    title={item.title}
+                    datePublished={item.datePublished}
+                    url={item.url}
+                    description={item.description}
+                    icon={icon}
+                    banner={item.banner}
+                    sitename={sitename || title}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
 }
 
-export default List;
+export default Collection;

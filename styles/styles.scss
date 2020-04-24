@@ -75,6 +75,13 @@ img.embed-responsive-item {
   padding-right: 0;
 }
 
+@include media-breakpoint-up('lg') {
+  .has-icon .collection {
+    flex: 0 0 80%;
+    min-width: 80%;
+  }
+}
+
 @include media-breakpoint-up('sm') {
   .feed-item {
     padding-left: $grid-gutter-width / 2;

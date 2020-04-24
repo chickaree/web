@@ -78,7 +78,7 @@ function Article({
 
   return (
     <div className="row mb-3">
-      <div className="col-lg-8 offset-lg-2 col feed-item">
+      <div className="col feed-item">
         <div className="card">
           <div className="card-header">
             <div className="row align-items-center">
