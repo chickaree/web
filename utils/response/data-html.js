@@ -5,6 +5,7 @@ import createQueryText from '../query-text';
 import jsonldFrame from '../jsonld-frame';
 import toArray from '../to-array';
 import { Article, WebPage, ItemList } from '../../tree/schema';
+import getResourceLinkData from '../resource-link-data';
 // import fetchResource from '../fetch-resource';
 
 const supportedTypes = [
@@ -88,7 +89,7 @@ async function getResponseDataHTML(response, doc) {
   const attribute = createAttribute(head);
   const text = createQueryText(head);
 
-  let type = '';
+  let type = 'ItemPage';
   let sitename;
   let title;
   let description;
@@ -100,40 +101,40 @@ async function getResponseDataHTML(response, doc) {
 
   // @TODO Get the "canonical" url
 
-  const manifestHref = attribute('link[rel="manifest"]', 'href');
-  if (manifestHref) {
-    manifest = new URL(manifestHref, url.toString());
-    // @TODO Move this higher up so we aren't getting it on every result.
-    // const manifest = await getManifest(manifestURL.toString());
-    // sitename = manifest.name || sitename;
-    // const appIcons = toArray(manifest.icons)
-    //   .filter((i) => !!i.sizes)
-    //   .map((i) => ({
-    //     ...i,
-    //     sizes: i.sizes.split(' ').map((size) => (
-    //       size.split('x').map((num) => parseInt(num, 10))
-    //     )).filter(([width, height]) => width === height).sort(([a], [b]) => a - b),
-    //   }))
-    //   .sort((a, b) => {
-    //     const [aSize] = a.sizes;
-    //     const [bSize] = b.sizes;
+  // const manifestHref = attribute('link[rel="manifest"]', 'href');
+  // if (manifestHref) {
+  //   manifest = new URL(manifestHref, url.toString());
+  //   // @TODO Move this higher up so we aren't getting it on every result.
+  //   const manifest = await getManifest(manifestURL.toString());
+  //   sitename = manifest.name || sitename;
+  //   const appIcons = toArray(manifest.icons)
+  //     .filter((i) => !!i.sizes)
+  //     .map((i) => ({
+  //       ...i,
+  //       sizes: i.sizes.split(' ').map((size) => (
+  //         size.split('x').map((num) => parseInt(num, 10))
+  //       )).filter(([width, height]) => width === height).sort(([a], [b]) => a - b),
+  //     }))
+  //     .sort((a, b) => {
+  //       const [aSize] = a.sizes;
+  //       const [bSize] = b.sizes;
 
-    //     const [aWidth] = aSize;
-    //     const [bWidth] = bSize;
+  //       const [aWidth] = aSize;
+  //       const [bWidth] = bSize;
 
-    //     if (aWidth > bWidth) {
-    //       return -1;
-    //     }
+  //       if (aWidth > bWidth) {
+  //         return -1;
+  //       }
 
-    //     if (bWidth > aWidth) {
-    //       return 1;
-    //     }
+  //       if (bWidth > aWidth) {
+  //         return 1;
+  //       }
 
-    //     return 0;
-    //   });
+  //       return 0;
+  //     });
 
-    // icon = appIcons.length > 0 && appIcons[0].src ? appIcons[0].src : icon;
-  }
+  //   icon = appIcons.length > 0 && appIcons[0].src ? appIcons[0].src : icon;
+  // }
 
   if (!icon) {
     const icons = [...head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').values()].filter((element) => !!element.hasAttribute('href'))
@@ -179,12 +180,13 @@ async function getResponseDataHTML(response, doc) {
       let mainCreativeWork;
 
       if (intersection(toArray(data.type), Article).length) {
-        type = 'article';
+        type = 'ItemPage';
         mainCreativeWork = data;
       }
 
       if (intersection(toArray(data.type), WebPage).length) {
-        type = 'website';
+        // @TODO This seems like a lie...
+        type = 'CollectionPage';
         mainCreativeWork = data;
         if (data.mainEntity) {
           items = toArray(data.mainEntity.itemListElement || []).map((item) => item.url);
@@ -192,7 +194,7 @@ async function getResponseDataHTML(response, doc) {
       }
 
       if (intersection(toArray(data.type), ItemList).length) {
-        type = 'website';
+        type = 'CollectionPage';
         items = toArray(data.itemListElement || []).map((item) => item.url);
         if (data.mainEntityOfPage) {
           mainCreativeWork = data.mainEntityOfPage;
@@ -246,7 +248,7 @@ async function getResponseDataHTML(response, doc) {
           }
         }
 
-        const ratio = type === 'website' ? 21 / 9 : 16 / 9;
+        const ratio = type === 'CollectionPage' ? 21 / 9 : 16 / 9;
         const image = getBestImages(mainCreativeWork.image, ratio);
 
         // @TODO Use response images... somehow.
@@ -264,14 +266,14 @@ async function getResponseDataHTML(response, doc) {
   }
 
   if (!type) {
-    // If it's the root of the site, always assume it's a website.
+    // If it's the root of the site, always assume it's a collection.
     if (url.pathname === '/') {
-      type = 'website';
+      type = 'CollectionPage';
     } else {
       type = attribute('meta[property="og:type"], meta[name="og:type"]', 'content');
       // If the type returned is not supported, override it to an article for now.
       if (!supportedTypes.includes(type)) {
-        type = 'article';
+        type = 'ItemPage';
       }
     }
   }
@@ -366,19 +368,88 @@ async function getResponseDataHTML(response, doc) {
     .sort((a, b) => a.order - b.order)
     .map(({ link }) => (new URL(link.getAttribute('href'), url)).toString());
 
+  const pageURL = new URL(getResourceLinkData(url.toString()).as, 'https://chickar.ee/');
+  const siteURL = new URL(getResourceLinkData(url.origin).as, 'https://chickar.ee/');
+
+  const author = {
+    id: siteURL.toString(),
+    type: 'Organization',
+    url: siteURL.toString(),
+    name: sitename,
+    description,
+    logo: icon ? getSafeAssetUrl(icon, url.toString()) : null,
+    sameAs: url.origin,
+  };
+
+  const page = {
+    '@context': 'http://schema.org/',
+    type,
+    url: pageURL.toString(),
+    datePublished,
+    name: title,
+    publisher: {
+      type: 'Organization',
+      name: 'Chickaree',
+      url: 'https://chickar.ee',
+      // @TODO Add the default image and logo here!
+    },
+    author,
+    description,
+    primaryImageOfPage: banner ? { url: getSafeAssetUrl(banner, url.toString()) } : null,
+    // significantLink: feeds,
+    // mainEntity: {
+    //   type: 'ItemList',
+    //   itemListElement: items,
+    // },
+  };
+
+  if (type === 'CollectionPage') {
+    return {
+      ...page,
+      about: author,
+      // @TODO Make this part of the items?
+      significantLink: feeds,
+      mainEntity: {
+        type: 'ItemList',
+        // @TODO The items should be URLs on Chickaree
+        itemListElement: items,
+      },
+    };
+  }
+
+  return {
+    ...page,
+    mainEntity: {
+      type: 'SocialMediaPosting',
+      author,
+      datePublished,
+      sharedContent: {
+        id: url.toString(),
+        type: 'Article',
+        url: url.toString(),
+        name: title,
+        description,
+        image: banner ? { url: getSafeAssetUrl(banner, url.toString()) } : null,
+      },
+    },
+  };
+
   return {
     type,
-    resource: {
-      url: url.toString(),
-      manifest,
-      datePublished,
-      title,
-      sitename,
-      description,
-      banner: banner ? getSafeAssetUrl(banner, url.toString()) : null,
-      icon: icon ? getSafeAssetUrl(icon, url.toString()) : null,
-      feeds,
-      items,
+    url: url.toString(),
+    datePublished,
+    name: title,
+    publisher: {
+      type: 'Organization',
+      name: sitename,
+      logo: icon ? getSafeAssetUrl(icon, url.toString()) : null,
+    },
+    description,
+    primaryImageOfPage: banner ? getSafeAssetUrl(banner, url.toString()) : null,
+    significantLink: feeds,
+    mainEntity: {
+      type: 'ItemList',
+      itemListElement: items,
     },
   };
 }
