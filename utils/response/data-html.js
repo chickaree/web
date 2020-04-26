@@ -25,6 +25,17 @@ function intersection(a, b) {
   return a.filter((x) => b.includes(x));
 }
 
+function getImageObj(url, base) {
+  if (!url) {
+    return null;
+  }
+
+  return {
+    type: 'Link',
+    href: getSafeAssetUrl(url, base),
+  };
+}
+
 function getBestImages(data, ratio) {
   return toArray(data || []).filter((i) => typeof i !== 'string' || !!i.url).sort((a, b) => {
     if (!a.width || !b.width) {
@@ -89,15 +100,9 @@ async function getResponseDataHTML(response, doc) {
   const attribute = createAttribute(head);
   const text = createQueryText(head);
 
-  let type = 'ItemPage';
-  let sitename;
-  let title;
-  let description;
-  let banner;
-  let icon;
-  let manifest;
-  let datePublished;
-  let items = [];
+  const obj = {
+    attributedTo: {},
+  };
 
   // @TODO Get the "canonical" url
 
@@ -136,7 +141,7 @@ async function getResponseDataHTML(response, doc) {
   //   icon = appIcons.length > 0 && appIcons[0].src ? appIcons[0].src : icon;
   // }
 
-  if (!icon) {
+  if (!obj.attributedTo.icon) {
     const icons = [...head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').values()].filter((element) => !!element.hasAttribute('href'))
       .sort((a, b) => {
       // Prefer larger.
@@ -150,7 +155,7 @@ async function getResponseDataHTML(response, doc) {
         return bSize - aSize;
       }).map((link) => link.getAttribute('href'));
 
-    icon = icons.length > 0 ? icons[0] : icon;
+    obj.attributedTo.icon = icons.length > 0 ? getImageObj(icons[0], url) : obj.attributedTo.icon;
   }
 
   let jsonDocs = [];
@@ -180,34 +185,46 @@ async function getResponseDataHTML(response, doc) {
       let mainCreativeWork;
 
       if (intersection(toArray(data.type), Article).length) {
-        type = 'ItemPage';
+        obj.type = 'Note';
+        obj.attachment = {
+          type: 'Article',
+        };
         mainCreativeWork = data;
       }
 
       if (intersection(toArray(data.type), WebPage).length) {
         // @TODO This seems like a lie...
-        type = 'CollectionPage';
+        obj.type = 'Collection';
         mainCreativeWork = data;
         if (data.mainEntity) {
-          items = toArray(data.mainEntity.itemListElement || []).map((item) => item.url);
+          obj.items = toArray(data.mainEntity.itemListElement || []).map((item) => ({
+            type: 'Link',
+            href: item.url,
+          }));
         }
       }
 
       if (intersection(toArray(data.type), ItemList).length) {
-        type = 'CollectionPage';
-        items = toArray(data.itemListElement || []).map((item) => item.url);
+        obj.type = 'Collection';
+        obj.items = toArray(data.itemListElement || []).map((item) => ({
+          type: 'Link',
+          href: item.url,
+        }));
         if (data.mainEntityOfPage) {
           mainCreativeWork = data.mainEntityOfPage;
         }
       }
 
+      // The "main" object is either the obj or an attachment.
+      const mainObj = obj.attachment ? obj.attachment : obj;
+
       if (mainCreativeWork) {
-        title = mainCreativeWork.name || mainCreativeWork.headline || title;
-        description = mainCreativeWork.description || mainCreativeWork.headline || description;
+        mainObj.name = mainCreativeWork.name || mainCreativeWork.headline || mainObj.name;
+        mainObj.summary = mainCreativeWork.description || mainCreativeWork.headline || mainObj.summary;
 
         if (data.datePublished) {
           try {
-            datePublished = DateTime.fromISO(data.datePublished, { zone: 'utc' }).toISO();
+            obj.published = DateTime.fromISO(data.datePublished, { zone: 'utc' }).toISO();
           } catch (e) {
             // Silence is Golden.
           }
@@ -222,8 +239,8 @@ async function getResponseDataHTML(response, doc) {
           // Maybe use Intl.ListFormat and a pollyfill?
           const publisher = publishers['@graph'] ? publishers['@graph'][0] : publishers;
 
-          sitename = publisher.name || sitename;
-          description = publisher.description || description;
+          obj.attributedTo.name = publisher.name || obj.attributedTo.name;
+          obj.attributedTo.summary = publisher.description || obj.attributedTo.summary;
           // @TODO Should this be image if it's a Person and... logo if it's an org?
           const publisherImage = getBestImages([
             ...toArray(publisher.logo || []),
@@ -234,29 +251,29 @@ async function getResponseDataHTML(response, doc) {
           // @TODO Use response images... somehow.
           if (publisherImage.length > 0) {
             if (typeof publisherImage[0] === 'string') {
-              [icon] = publisherImage;
+              obj.attributedTo.icon = getImageObj(publisherImage[0], url);
             } else if (publisherImage[0].url) {
               // Only override an existing icon if the width & height are a 1:1 ratio.
-              if (icon) {
+              if (obj.attributedTo.icon) {
                 if (publisherImage[0].width / publisherImage[0].height === 1) {
-                  icon = publisherImage[0].url;
+                  obj.attributedTo.icon = getImageObj(publisherImage[0].url, url);
                 }
               } else {
-                icon = publisherImage[0].url;
+                obj.attributedTo.icon = getImageObj(publisherImage[0].url, url);
               }
             }
           }
         }
 
-        const ratio = type === 'CollectionPage' ? 21 / 9 : 16 / 9;
+        const ratio = obj.type === 'Collection' ? 21 / 9 : 16 / 9;
         const image = getBestImages(mainCreativeWork.image, ratio);
 
         // @TODO Use response images... somehow.
         if (image.length > 0) {
           if (typeof image[0] === 'string') {
-            [banner] = image;
+            mainObj.image = getImageObj(image[0], url);
           } else if (image[0].url) {
-            banner = image[0].url;
+            mainObj.image = getImageObj(image[0].url, url);
           }
         }
       }
@@ -265,193 +282,130 @@ async function getResponseDataHTML(response, doc) {
     }
   }
 
-  if (!type) {
+  if (!obj.type) {
     // If it's the root of the site, always assume it's a collection.
     if (url.pathname === '/') {
-      type = 'CollectionPage';
+      obj.type = 'Collection';
     } else {
       type = attribute('meta[property="og:type"], meta[name="og:type"]', 'content');
-      // If the type returned is not supported, override it to an article for now.
-      if (!supportedTypes.includes(type)) {
-        type = 'ItemPage';
+      if (type === 'website') {
+        obj.type = 'Collection';
+      } else {
+        obj.type = 'Note';
+        // @TODO Figure out how to handle other attachments.
+        obj.attachment = {
+          type: 'Article',
+        };
       }
     }
   }
 
-  if (!title) {
-    title = attribute('meta[property="og:title"], meta[name="og:title"]', 'content');
+  const mainObj = obj.attachment ? obj.attachment : obj;
+
+  if (!mainObj.name) {
+    mainObj.name = attribute('meta[property="og:title"], meta[name="og:title"]', 'content');
   }
-  if (!title) {
-    title = text('title');
+  if (!mainObj.name) {
+    mainObj.name = text('title');
   }
 
-  if (!sitename) {
-    sitename = attribute('meta[property="og:site_name"], meta[name="og:site_name"]', 'content');
+  if (!obj.attributedTo.name) {
+    obj.attributedTo.name = attribute('meta[property="og:site_name"], meta[name="og:site_name"]', 'content');
   }
-  if (!sitename) {
-    sitename = attribute('meta[name="application-name"]', 'content');
+  if (!obj.attributedTo.name) {
+    obj.attributedTo.name = attribute('meta[name="application-name"]', 'content');
   }
-  if (!sitename) {
-    sitename = text('title');
-  }
-
-  if (!description) {
-    description = attribute('meta[property="og:description"], meta[name="og:description"]', 'content');
-  }
-  if (!description) {
-    description = attribute('meta[name="description"]', 'content');
+  if (!obj.attributedTo.name) {
+    obj.attributedTo.name = text('title');
   }
 
-  if (!banner) {
-    banner = attribute('meta[property="og:image"], meta[name="og:image"]', 'content');
+  if (!mainObj.summary) {
+    mainObj.summary = attribute('meta[property="og:description"], meta[name="og:description"]', 'content');
+  }
+  if (!mainObj.summary) {
+    mainObj.summary = attribute('meta[name="description"]', 'content');
   }
 
-  if (!datePublished) {
+  if (!obj.attributedTo.image) {
+    obj.attributedTo.image = getImageObj(attribute('meta[property="og:image"], meta[name="og:image"]', 'content'), url);
+  }
+
+  if (!obj.published) {
     const datetime = attribute('meta[property="article:published_time"], meta[name="article:published_time"]', 'content');
     if (datetime) {
-      datePublished = DateTime.fromISO(datetime, { zone: 'utc' }).toISO();
+      obj.published = DateTime.fromISO(datetime, { zone: 'utc' }).toISO();
     }
   }
 
-  const feeds = [...head.querySelectorAll('link[rel="alternate"]').values()].map((link, index) => ({
-    link,
-    order: index,
-  })).filter(({ link }) => {
-    // If the feed is missing an href, it should not be considered.
-    if (!link.hasAttribute('href')) {
-      return false;
-    }
-
-    // If the link is missing a type, it's not a feed.
-    if (!link.hasAttribute('type')) {
-      return false;
-    }
-
-    // Only include types we currently support.
-    if (!['application/json', 'application/xml', 'application/rss+xml', 'application/atom+xml', 'text/xml'].includes(link.getAttribute('type'))) {
-      return false;
-    }
-
-    return true;
-  })
-    .sort(({ link: a }, { link: b }) => {
-    // Prefer JSON.
-      if (!a.hasAttribute('type') || !b.hasAttribute('type')) {
-        return 0;
+  if (obj.type === 'Collection') {
+    const feeds = [...head.querySelectorAll('link[rel="alternate"]').values()].map((link, index) => ({
+      link,
+      order: index,
+    })).filter(({ link }) => {
+      // If the feed is missing an href, it should not be considered.
+      if (!link.hasAttribute('href')) {
+        return false;
       }
 
-      if (a.getAttribute('type') === b.getAttribute('type')) {
-        return 0;
+      // If the link is missing a type, it's not a feed.
+      if (!link.hasAttribute('type')) {
+        return false;
       }
 
-      if (a.getAttribute('type') === 'application/json') {
-        return -1;
+      // Only include types we currently support.
+      if (!['application/json', 'application/xml', 'application/rss+xml', 'application/atom+xml', 'text/xml'].includes(link.getAttribute('type'))) {
+        return false;
       }
 
-      if (b.getAttribute('type') === 'application/json') {
-        return 1;
-      }
-
-      return 0;
+      return true;
     })
-    .reduce((acc, item) => {
-    // Dedupe the feeds by the title.
-      if (acc.find((i) => i.link.getAttribute('title') === item.link.getAttribute('title'))) {
-        return acc;
-      }
+      .sort(({ link: a }, { link: b }) => {
+      // Prefer JSON.
+        if (!a.hasAttribute('type') || !b.hasAttribute('type')) {
+          return 0;
+        }
 
-      return [
-        ...acc,
-        item,
-      ];
-    }, [])
-    .sort((a, b) => a.order - b.order)
-    .map(({ link }) => (new URL(link.getAttribute('href'), url)).toString());
+        if (a.getAttribute('type') === b.getAttribute('type')) {
+          return 0;
+        }
 
-  const pageURL = new URL(getResourceLinkData(url.toString()).as, 'https://chickar.ee/');
-  const siteURL = new URL(getResourceLinkData(url.origin).as, 'https://chickar.ee/');
+        if (a.getAttribute('type') === 'application/json') {
+          return -1;
+        }
 
-  const author = {
-    id: siteURL.toString(),
-    type: 'Organization',
-    url: siteURL.toString(),
-    name: sitename,
-    description,
-    logo: icon ? getSafeAssetUrl(icon, url.toString()) : null,
-    sameAs: url.origin,
-  };
+        if (b.getAttribute('type') === 'application/json') {
+          return 1;
+        }
 
-  const page = {
-    '@context': 'http://schema.org/',
-    type,
-    url: pageURL.toString(),
-    datePublished,
-    name: title,
-    publisher: {
-      type: 'Organization',
-      name: 'Chickaree',
-      url: 'https://chickar.ee',
-      // @TODO Add the default image and logo here!
-    },
-    author,
-    description,
-    primaryImageOfPage: banner ? { url: getSafeAssetUrl(banner, url.toString()) } : null,
-    // significantLink: feeds,
-    // mainEntity: {
-    //   type: 'ItemList',
-    //   itemListElement: items,
-    // },
-  };
+        return 0;
+      })
+      .reduce((acc, item) => {
+      // Dedupe the feeds by the title.
+        if (acc.find((i) => i.link.getAttribute('title') === item.link.getAttribute('title'))) {
+          return acc;
+        }
 
-  if (type === 'CollectionPage') {
-    return {
-      ...page,
-      about: author,
-      // @TODO Make this part of the items?
-      significantLink: feeds,
-      mainEntity: {
-        type: 'ItemList',
-        // @TODO The items should be URLs on Chickaree
-        itemListElement: items,
-      },
-    };
+        return [
+          ...acc,
+          item,
+        ];
+      }, [])
+      .sort((a, b) => a.order - b.order)
+      .map(({ link }) => ({
+        type: 'Link',
+        name: link.getAttribute('title'),
+        href: (new URL(link.getAttribute('href'), url)).toString(),
+      }));
+
+    obj.items = [
+      ...feeds,
+      ...(obj.items || []),
+    ];
   }
 
-  return {
-    ...page,
-    mainEntity: {
-      type: 'SocialMediaPosting',
-      author,
-      datePublished,
-      sharedContent: {
-        id: url.toString(),
-        type: 'Article',
-        url: url.toString(),
-        name: title,
-        description,
-        image: banner ? { url: getSafeAssetUrl(banner, url.toString()) } : null,
-      },
-    },
-  };
+  console.log('OBJ', obj);
 
-  return {
-    type,
-    url: url.toString(),
-    datePublished,
-    name: title,
-    publisher: {
-      type: 'Organization',
-      name: sitename,
-      logo: icon ? getSafeAssetUrl(icon, url.toString()) : null,
-    },
-    description,
-    primaryImageOfPage: banner ? getSafeAssetUrl(banner, url.toString()) : null,
-    significantLink: feeds,
-    mainEntity: {
-      type: 'ItemList',
-      itemListElement: items,
-    },
-  };
+  return obj;
 }
 
 export default getResponseDataHTML;
