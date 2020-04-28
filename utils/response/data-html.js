@@ -5,14 +5,7 @@ import createQueryText from '../query-text';
 import jsonldFrame from '../jsonld-frame';
 import toArray from '../to-array';
 import { Article, WebPage, ItemList } from '../../tree/schema';
-import getResourceLinkData from '../resource-link-data';
 // import fetchResource from '../fetch-resource';
-
-const supportedTypes = [
-  'website',
-  'feed',
-  'article',
-];
 
 function createAttribute(doc) {
   return (querySelector, attribute) => {
@@ -101,7 +94,9 @@ async function getResponseDataHTML(response, doc) {
   const text = createQueryText(head);
 
   const obj = {
-    attributedTo: {},
+    attributedTo: {
+      type: 'Object',
+    },
   };
 
   // @TODO Get the "canonical" url
@@ -185,10 +180,7 @@ async function getResponseDataHTML(response, doc) {
       let mainCreativeWork;
 
       if (intersection(toArray(data.type), Article).length) {
-        obj.type = 'Note';
-        obj.attachment = {
-          type: 'Article',
-        };
+        obj.type = 'Article';
         mainCreativeWork = data;
       }
 
@@ -215,12 +207,9 @@ async function getResponseDataHTML(response, doc) {
         }
       }
 
-      // The "main" object is either the obj or an attachment.
-      const mainObj = obj.attachment ? obj.attachment : obj;
-
       if (mainCreativeWork) {
-        mainObj.name = mainCreativeWork.name || mainCreativeWork.headline || mainObj.name;
-        mainObj.summary = mainCreativeWork.description || mainCreativeWork.headline || mainObj.summary;
+        obj.name = mainCreativeWork.name || mainCreativeWork.headline || obj.name;
+        obj.summary = mainCreativeWork.description || mainCreativeWork.headline || obj.summary;
 
         if (data.datePublished) {
           try {
@@ -271,9 +260,9 @@ async function getResponseDataHTML(response, doc) {
         // @TODO Use response images... somehow.
         if (image.length > 0) {
           if (typeof image[0] === 'string') {
-            mainObj.image = getImageObj(image[0], url);
+            obj.image = getImageObj(image[0], url);
           } else if (image[0].url) {
-            mainObj.image = getImageObj(image[0].url, url);
+            obj.image = getImageObj(image[0].url, url);
           }
         }
       }
@@ -287,26 +276,21 @@ async function getResponseDataHTML(response, doc) {
     if (url.pathname === '/') {
       obj.type = 'Collection';
     } else {
-      type = attribute('meta[property="og:type"], meta[name="og:type"]', 'content');
+      const type = attribute('meta[property="og:type"], meta[name="og:type"]', 'content');
       if (type === 'website') {
         obj.type = 'Collection';
       } else {
-        obj.type = 'Note';
-        // @TODO Figure out how to handle other attachments.
-        obj.attachment = {
-          type: 'Article',
-        };
+        // @TODO Figure out how to handle other types.
+        obj.type = 'Article';
       }
     }
   }
 
-  const mainObj = obj.attachment ? obj.attachment : obj;
-
-  if (!mainObj.name) {
-    mainObj.name = attribute('meta[property="og:title"], meta[name="og:title"]', 'content');
+  if (!obj.name) {
+    obj.name = attribute('meta[property="og:title"], meta[name="og:title"]', 'content');
   }
-  if (!mainObj.name) {
-    mainObj.name = text('title');
+  if (!obj.name) {
+    obj.name = text('title');
   }
 
   if (!obj.attributedTo.name) {
@@ -319,11 +303,11 @@ async function getResponseDataHTML(response, doc) {
     obj.attributedTo.name = text('title');
   }
 
-  if (!mainObj.summary) {
-    mainObj.summary = attribute('meta[property="og:description"], meta[name="og:description"]', 'content');
+  if (!obj.summary) {
+    obj.summary = attribute('meta[property="og:description"], meta[name="og:description"]', 'content');
   }
-  if (!mainObj.summary) {
-    mainObj.summary = attribute('meta[name="description"]', 'content');
+  if (!obj.summary) {
+    obj.summary = attribute('meta[name="description"]', 'content');
   }
 
   if (!obj.attributedTo.image) {
