@@ -212,10 +212,7 @@ async function getResponseDataHTML(response, doc) {
 
         if (mainCreativeWork.publisher) {
           const publishers = await jsonldFrame(docs, {
-            id: [
-              ...toArray(mainCreativeWork.publisher).map((p) => p.id),
-              ...toArray(mainCreativeWork.author).map((p) => p.id),
-            ],
+            id: toArray(mainCreativeWork.publisher).map((p) => p.id),
           });
 
           // What do we do if there is more than one?
