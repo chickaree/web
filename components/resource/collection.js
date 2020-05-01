@@ -97,7 +97,7 @@ function FeedDescription({ description }) {
   }
 
   return (
-    <p>{description}</p>
+    <div className="card-text">{description}</div>
   );
 }
 
@@ -128,9 +128,9 @@ function FeedList({ feeds, icon }) {
                 <FeedIcon href={feed.url} src={iconSrc} alt={feed.name} />
               </div>
               <div className="col">
-                <h5>
+                <h4 className="card-title">
                   <ResourceLink resource={feed.url}><a>{feed.name}</a></ResourceLink>
-                </h5>
+                </h4>
                 <FeedDescription description={feed.summary} />
               </div>
             </div>
