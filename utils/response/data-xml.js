@@ -1,13 +1,6 @@
-import getSafeAssetUrl from '../safe-asset-url';
 import getResponseUrl from '../response-url';
 import createQueryText from '../query-text';
-
-function createSafeUrl(doc, url) {
-  return (querySelector) => {
-    const element = doc.querySelector(querySelector);
-    return element ? getSafeAssetUrl(element.textContent, url.toString()) : null;
-  };
-}
+import getImageObj from '../image-obj';
 
 function createQueryAllText(doc) {
   return (querySelector) => {
@@ -35,31 +28,34 @@ async function getResponseDataXML(response, doc) {
   const text = createQueryText(doc);
   const textList = createQueryAllText(doc);
   const attributeList = createQueryAllAttribute(doc);
-  const safeUrl = createSafeUrl(doc, url);
 
   if (root.toLowerCase() === 'rss') {
     return {
-      type: 'feed',
-      resource: {
-        title: text('channel > title'),
-        url: url.toString(),
-        icon: safeUrl('channel > image > url'),
-        description: text('channel > description'),
-        items: textList('item > link'),
-      },
+      type: 'OrderedCollection',
+      name: text('channel > title'),
+      url: url.toString(),
+      icon: getImageObj(text('channel > image > url'), url),
+      summary: text('channel > description'),
+      // @TODO handle embeded objects.
+      orderedItems: textList('item > link').map((href) => ({
+        type: 'Link',
+        href,
+      })),
     };
   }
 
   if (root.toLowerCase() === 'feed') {
     return {
-      type: 'feed',
-      resource: {
-        title: text(':root > title'),
-        url: url.toString(),
-        icon: safeUrl(':root > icon'),
-        description: text(':root > description') || text(':root > subtitle'),
-        items: attributeList('entry > link', 'href'),
-      },
+      type: 'OrderedCollection',
+      name: text(':root > title'),
+      url: url.toString(),
+      icon: getImageObj(text(':root > icon'), url),
+      summary: text(':root > description') || text(':root > subtitle'),
+      // @TODO handle embeded objects.
+      orderedItems: attributeList('entry > link', 'href').map((href) => ({
+        type: 'Link',
+        href,
+      })),
     };
   }
 

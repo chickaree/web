@@ -1,9 +1,8 @@
-import { useReducer } from 'react';
+import { useReducer, useMemo } from 'react';
 import { from, of } from 'rxjs';
 import {
   switchMap,
   flatMap,
-  toArray,
   map,
   bufferTime,
   filter,
@@ -16,6 +15,8 @@ import Icon from '../icon';
 import getResponseData from '../../utils/response/data';
 import PageTitle from '../page-title';
 import Article from '../article';
+import getLinkHref from '../../utils/link-href';
+import Card from '../card';
 
 function Banner({ src, alt }) {
   if (!src) {
@@ -29,6 +30,26 @@ function Banner({ src, alt }) {
   );
 }
 
+function FeedImage({ href, src, alt }) {
+  if (!src) {
+    return null;
+  }
+
+  return (
+    <div className="row">
+      <div className="col">
+        <div className="embed-responsive embed-responsive-21by9 card-img-top">
+          <ResourceLink resource={href}>
+            <a>
+              <img src={src} alt={alt} className="embed-responsive-item" loading="lazy" />
+            </a>
+          </ResourceLink>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FeedIcon({ href, src, alt }) {
   if (!src) {
     return null;
@@ -36,7 +57,7 @@ function FeedIcon({ href, src, alt }) {
 
   return (
     <ResourceLink resource={href}>
-      <a className="d-block">
+      <a className="feed-icon d-block">
         <Icon src={src} alt={alt} />
       </a>
     </ResourceLink>
@@ -80,58 +101,52 @@ function FeedDescription({ description }) {
   );
 }
 
-function FeedList({ feeds: feedList }) {
-  if (!feedList || !feedList.length) {
+function FeedList({ feeds, icon }) {
+  if (!feeds || !feeds.length) {
     return null;
   }
 
-  // Remove duplicate feeds.
-  const feeds = [...feedList.reduce((feedMap, feed) => {
-    feedMap.set(feed.url, feed);
-    return feedMap;
-  }, new Map()).values()];
+  return feeds.map((feed) => {
+    const imgSrc = getLinkHref(feed.image);
 
-  const hasFeedIcons = !!feeds.filter((feed) => !!feed.icon).length;
+    const iconSrc = getLinkHref(feed.icon) || icon;
 
-  return (
-    <div className="row mb-3">
-      <div className="col feed-item">
-        <div className="card">
-          <ol className="list-group list-group-flush">
-            {feeds.map((feed) => (
-              <li className="list-group-item" key={feed.url}>
-                <div className="row">
-                  <div className={hasFeedIcons ? 'col-3 col-md-2' : ''}>
-                    <FeedIcon href={feed.url} src={feed.icon} alt={feed.title} />
-                  </div>
-                  <div className="col">
-                    <h5>
-                      <ResourceLink resource={feed.url}><a>{feed.title}</a></ResourceLink>
-                    </h5>
-                    <FeedDescription description={feed.description} />
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ol>
+    let className = [];
+    if (imgSrc) {
+      className = [
+        ...className,
+        'has-image',
+      ];
+    }
+    return (
+      <Card>
+        <div className={className.join(' ')}>
+          <FeedImage href={feed.url} src={imgSrc} alt={feed.name} />
+          <div className="card-body">
+            <div className="row">
+              <div className={iconSrc ? 'col-3 col-md-2' : ''}>
+                <FeedIcon href={feed.url} src={iconSrc} alt={feed.name} />
+              </div>
+              <div className="col">
+                <h5>
+                  <ResourceLink resource={feed.url}><a>{feed.name}</a></ResourceLink>
+                </h5>
+                <FeedDescription description={feed.summary} />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  );
+      </Card>
+    );
+  });
 }
 
 const initialState = {
-  feeds: [],
   items: [],
 };
 
 function reducer(state, action) {
   switch (action.type) {
-    case 'FEEDS_SET':
-      return {
-        ...state,
-        feeds: action.payload,
-      };
     case 'ITEMS_ADD':
       return {
         ...state,
@@ -139,15 +154,15 @@ function reducer(state, action) {
           ...state.items,
           ...action.payload,
         ].reduce((acc, item) => {
-          acc.set(item.url, item);
+          acc.set(item.data.url, item);
 
           return acc;
-        }, new Map()).values()].sort((a, b) => {
-          const aDateTime = a.datePublished
-            ? DateTime.fromISO(a.datePublished)
+        }, new Map()).values()].sort((a, b) => a.index - b.index).sort((a, b) => {
+          const aDateTime = a.data.published
+            ? DateTime.fromISO(a.data.published)
             : DateTime.fromMillis(0);
-          const bDateTime = b.datePublished
-            ? DateTime.fromISO(b.datePublished)
+          const bDateTime = b.data.published
+            ? DateTime.fromISO(b.data.published)
             : DateTime.fromMillis(0);
 
           return bDateTime.diff(aDateTime);
@@ -160,53 +175,17 @@ function reducer(state, action) {
   }
 }
 
-// @TODO Refactor the FeedList to include this?
-function feedReactor(value$) {
-  return value$.pipe(
-    switchMap(([feeds]) => (
-      from(feeds).pipe(
-        flatMap((href, index) => (
-          fetchResource(href).pipe(
-            flatMap((response) => getResponseData(response)),
-            flatMap((item) => of({
-              item,
-              index,
-            })),
-          )
-        )),
-        // @TODO Render as they come in (group by tick), but sort by date in the reducer.
-        toArray(),
-        map((items) => (
-          items.sort((a, b) => a.index - b.index).reduce((acc, { item }) => {
-            if (!item) {
-              return acc;
-            }
-
-            if (item.type !== 'feed') {
-              return acc;
-            }
-
-            return {
-              ...acc,
-              payload: [
-                ...acc.payload,
-                item.resource,
-              ],
-            };
-          }, { type: 'FEEDS_SET', payload: [] })
-        )),
-      )
-    )),
-  );
-}
-
 function itemReactor(value$) {
   return value$.pipe(
     switchMap(([items]) => (
       from(items).pipe(
-        flatMap((href) => (
+        flatMap(({ href }, index) => (
           fetchResource(href).pipe(
             flatMap((response) => getResponseData(response)),
+            flatMap((data) => of({
+              data,
+              index,
+            })),
           )
         )),
         // Group by tick.
@@ -215,15 +194,11 @@ function itemReactor(value$) {
         map((feedItems) => ({
           type: 'ITEMS_ADD',
           payload: [...feedItems.reduce((acc, item) => {
-            if (!item) {
+            if (!item.data) {
               return acc;
             }
 
-            if (item.type !== 'article') {
-              return acc;
-            }
-
-            acc.set(item.resource.url, item.resource);
+            acc.set(item.data.url, item);
 
             return acc;
           }, new Map()).values()],
@@ -236,77 +211,108 @@ function itemReactor(value$) {
 function Collection({
   resource: {
     url,
-    title,
-    sitename,
-    description,
-    banner,
+    name,
+    attributedTo = {},
+    summary,
+    image,
     icon,
-    feeds = [],
-    items = [],
+    orderedItems = [],
   },
 }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  useReactor(feedReactor, dispatch, [feeds]);
-  useReactor(itemReactor, dispatch, [items]);
+  useReactor(itemReactor, dispatch, [orderedItems]);
 
   let className = [
     'container',
   ];
 
-  if (banner) {
+  if (image || attributedTo.image) {
     className = [
       ...className,
       'has-banner',
     ];
   }
 
-  if (icon) {
+  if (icon || attributedTo.icon) {
     className = [
       ...className,
       'has-icon',
     ];
   }
 
+  const title = name || attributedTo.name;
+
+  const iconSrc = getLinkHref(icon) || getLinkHref(attributedTo.icon);
+
+  const { feeds, entities } = useMemo(() => (
+    state.items.reduce((acc, { data }) => {
+      if (data.type === 'OrderedCollection') {
+        return {
+          ...acc,
+          feeds: [
+            ...acc.feeds,
+            data,
+          ],
+        };
+      }
+
+      return {
+        ...acc,
+        entities: [
+          ...acc.entities,
+          data,
+        ],
+      };
+    }, {
+      feeds: [],
+      entities: [],
+    })
+  ), [state.items]);
+
   return (
     <>
-      <PageTitle parts={[sitename || title]} />
-      <Banner src={banner} alt={sitename || title} />
+      <PageTitle parts={[title]} />
+      <Banner src={getLinkHref(image) || getLinkHref(attributedTo.image)} alt={title} />
       <div className={className.join(' ')}>
         <div className="row mt-3 mb-3 d-flex d-lg-none">
-          <CollectionIcon src={icon} alt={sitename || title} className="col-4" />
-          <div className={icon ? 'col' : 'col-lg-8 offset-lg-2 col'}>
+          <CollectionIcon src={iconSrc} alt={title} className="col-4" />
+          <div className={iconSrc ? 'col' : 'col-lg-8 offset-lg-2 col'}>
             <div className="row">
               <div className="col-12 col-lg-auto">
-                <h2>{sitename || title}</h2>
+                <h2>{title}</h2>
               </div>
-              <Description description={description} />
+              <Description description={summary} />
             </div>
           </div>
         </div>
         <div className="row mt-3 mb-3">
-          <CollectionIcon src={icon} alt={sitename || title} className="col-lg-2 d-lg-block d-none" />
-          <div className={icon ? 'col-lg-10 col' : 'col-lg-8 offset-lg-2 col'}>
+          <CollectionIcon src={iconSrc} alt={title} className="col-lg-2 d-lg-block d-none" />
+          <div className={iconSrc ? 'col-lg-10 col' : 'col-lg-8 offset-lg-2 col'}>
             <div className="row d-none d-lg-flex">
               <div className="col-12 col-lg-auto">
-                <h2>{sitename || title}</h2>
+                <h2>{title}</h2>
               </div>
-              <Description description={description} />
+              <Description description={summary} />
             </div>
             <div className="row">
               <div className="collection col">
-                <FeedList feeds={state.feeds} />
-                {state.items.map((item) => (
+                <FeedList feeds={feeds} icon={iconSrc} />
+                {entities.map((item) => (
                   <Article
                     key={item.url}
                     source={url}
-                    title={item.title}
-                    datePublished={item.datePublished}
+                    name={item.name}
+                    published={item.published}
                     url={item.url}
-                    description={item.description}
-                    icon={icon}
-                    banner={item.banner}
-                    sitename={sitename || title}
+                    summary={item.summary}
+                    image={item.image}
+                    attributedTo={{
+                      ...item.attributedTo,
+                      ...attributedTo,
+                      icon: icon || attributedTo.icon || item.attributedTo.icon,
+                      name: name || attributedTo.name || item.attributedTo.name,
+                    }}
                   />
                 ))}
               </div>

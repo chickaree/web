@@ -15,7 +15,6 @@ import Collection from '../components/resource/collection';
 import Item from '../components/resource/item';
 
 const initialState = {
-  type: null,
   resource: {},
 };
 
@@ -24,8 +23,7 @@ function reducer(state, action) {
     case 'RESOURCE_SET':
       return {
         ...state,
-        type: action.payload.type,
-        resource: action.payload.resource,
+        resource: action.payload,
       };
     case 'RESET':
       return initialState;
@@ -93,12 +91,11 @@ function Resource() {
   }, [domain, hash]);
 
   let content;
-  switch (state.type) {
-    case 'website':
-    case 'feed':
+  switch (state.resource.type) {
+    case 'OrderedCollection':
       content = <Collection resource={state.resource} />;
       break;
-    case 'article':
+    case 'Article':
       content = <Item resource={state.resource} />;
       break;
     default:

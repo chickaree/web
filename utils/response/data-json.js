@@ -1,18 +1,19 @@
 import getResponseUrl from '../response-url';
-import getSafeAssetUrl from '../safe-asset-url';
+import getImageObj from '../image-obj';
 
 function getResponseDataJson(response, data) {
   const url = getResponseUrl(response);
   return {
-    type: 'feed',
-    resource: {
-      url: url.toString(),
-      canonical: data.feed_url,
-      title: data.title || '',
-      icon: getSafeAssetUrl(data.icon, url.toString()),
-      description: data.description || '',
-      items: (data.items || []).map((item) => item.url),
-    },
+    type: 'OrderedCollection',
+    url: url.toString(),
+    name: data.title || '',
+    icon: getImageObj(data.icon, url),
+    summary: data.description || '',
+    // @TODO handle embeded objects.
+    orderedItems: (data.items || []).map((item) => ({
+      type: 'Link',
+      href: item.url,
+    })),
   };
 }
 

@@ -1,5 +1,7 @@
 import { DateTime } from 'luxon';
 import ResourceLink from './resource-link';
+import getLinkHref from '../utils/link-href';
+import Card from './card';
 
 function Image({ href, src, alt }) {
   if (!src) {
@@ -66,54 +68,50 @@ function DatePublished({
 
 function Article({
   source,
-  title,
-  datePublished,
+  name,
+  published,
   url,
-  description,
+  summary,
   icon,
-  banner,
-  sitename,
+  image,
+  attributedTo = {},
 }) {
   const { origin, host } = new URL(source);
 
   return (
-    <div className="row mb-3">
-      <div className="col feed-item">
-        <div className="card">
-          <div className="card-header">
-            <div className="row align-items-center">
-              <Icon resource={source} src={icon} alt={sitename} />
-              <div className={icon ? 'col-10 col-md-11' : 'col'}>
-                <div className="row align-items-center justify-content-between">
-                  <div className="col">
-                    <h5 className="mb-0">
-                      <ResourceLink resource={source}>
-                        <a>
-                          {sitename}
-                        </a>
-                      </ResourceLink>
-                    </h5>
-                    <h6 className="small mb-0">
-                      <ResourceLink resource={origin}>
-                        <a>{host}</a>
-                      </ResourceLink>
-                    </h6>
-                  </div>
-                  <DatePublished datetime={datePublished} href={url} />
-                </div>
+    <Card>
+      <div className="card-header">
+        <div className="row align-items-center">
+          <Icon resource={source} src={getLinkHref(attributedTo.icon)} alt={attributedTo.name} />
+          <div className={icon ? 'col-10 col-md-11' : 'col'}>
+            <div className="row align-items-center justify-content-between">
+              <div className="col">
+                <h5 className="mb-0">
+                  <ResourceLink resource={source}>
+                    <a>
+                      {attributedTo.name}
+                    </a>
+                  </ResourceLink>
+                </h5>
+                <h6 className="small mb-0">
+                  <ResourceLink resource={origin}>
+                    <a>{host}</a>
+                  </ResourceLink>
+                </h6>
               </div>
+              <DatePublished datetime={published} href={url} />
             </div>
-          </div>
-          <Image href={url} src={banner} alt={title} />
-          <div className="card-body">
-            <h4 className="card-title">
-              <a href={url}>{title}</a>
-            </h4>
-            <Description text={description} />
           </div>
         </div>
       </div>
-    </div>
+      <Image href={url} src={getLinkHref(image)} alt={name} />
+      <div className="card-body">
+        <h4 className="card-title">
+          <a href={url}>{name}</a>
+        </h4>
+        <Description text={summary} />
+      </div>
+    </Card>
   );
 }
 

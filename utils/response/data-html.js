@@ -1,10 +1,10 @@
 import { DateTime } from 'luxon';
-import getSafeAssetUrl from '../safe-asset-url';
 import getResponseUrl from '../response-url';
 import createQueryText from '../query-text';
 import jsonldFrame from '../jsonld-frame';
 import toArray from '../to-array';
 import { Article, WebPage, ItemList } from '../../tree/schema';
+import getImageObj from '../image-obj';
 // import fetchResource from '../fetch-resource';
 
 function createAttribute(doc) {
@@ -16,17 +16,6 @@ function createAttribute(doc) {
 
 function intersection(a, b) {
   return a.filter((x) => b.includes(x));
-}
-
-function getImageObj(url, base) {
-  if (!url) {
-    return null;
-  }
-
-  return {
-    type: 'Link',
-    href: getSafeAssetUrl(url, base),
-  };
 }
 
 function getBestImages(data, ratio) {
@@ -94,7 +83,9 @@ async function getResponseDataHTML(response, doc) {
   const text = createQueryText(head);
 
   const obj = {
+    url: url.toString(),
     attributedTo: {
+      // @TODO Maybe make this more specific?
       type: 'Object',
     },
   };
@@ -186,10 +177,10 @@ async function getResponseDataHTML(response, doc) {
 
       if (intersection(toArray(data.type), WebPage).length) {
         // @TODO This seems like a lie...
-        obj.type = 'Collection';
+        obj.type = 'OrderedCollection';
         mainCreativeWork = data;
         if (data.mainEntity) {
-          obj.items = toArray(data.mainEntity.itemListElement || []).map((item) => ({
+          obj.orderedItems = toArray(data.mainEntity.itemListElement || []).map((item) => ({
             type: 'Link',
             href: item.url,
           }));
@@ -197,8 +188,8 @@ async function getResponseDataHTML(response, doc) {
       }
 
       if (intersection(toArray(data.type), ItemList).length) {
-        obj.type = 'Collection';
-        obj.items = toArray(data.itemListElement || []).map((item) => ({
+        obj.type = 'OrderedCollection';
+        obj.orderedItems = toArray(data.itemListElement || []).map((item) => ({
           type: 'Link',
           href: item.url,
         }));
@@ -221,7 +212,10 @@ async function getResponseDataHTML(response, doc) {
 
         if (mainCreativeWork.publisher) {
           const publishers = await jsonldFrame(docs, {
-            id: toArray(mainCreativeWork.publisher).map((p) => p.id),
+            id: [
+              ...toArray(mainCreativeWork.publisher).map((p) => p.id),
+              ...toArray(mainCreativeWork.author).map((p) => p.id),
+            ],
           });
 
           // What do we do if there is more than one?
@@ -274,11 +268,11 @@ async function getResponseDataHTML(response, doc) {
   if (!obj.type) {
     // If it's the root of the site, always assume it's a collection.
     if (url.pathname === '/') {
-      obj.type = 'Collection';
+      obj.type = 'OrderedCollection';
     } else {
       const type = attribute('meta[property="og:type"], meta[name="og:type"]', 'content');
       if (type === 'website') {
-        obj.type = 'Collection';
+        obj.type = 'OrderedCollection';
       } else {
         // @TODO Figure out how to handle other types.
         obj.type = 'Article';
@@ -310,8 +304,8 @@ async function getResponseDataHTML(response, doc) {
     obj.summary = attribute('meta[name="description"]', 'content');
   }
 
-  if (!obj.attributedTo.image) {
-    obj.attributedTo.image = getImageObj(attribute('meta[property="og:image"], meta[name="og:image"]', 'content'), url);
+  if (!obj.image) {
+    obj.image = getImageObj(attribute('meta[property="og:image"], meta[name="og:image"]', 'content'), url);
   }
 
   if (!obj.published) {
@@ -321,7 +315,8 @@ async function getResponseDataHTML(response, doc) {
     }
   }
 
-  if (obj.type === 'Collection') {
+  // If the item is a collection and it's empty, get the referenced RSS/Atom feeds.
+  if (obj.type === 'OrderedCollection' && (!obj.orderedItems || obj.orderedItems.length === 0)) {
     const feeds = [...head.querySelectorAll('link[rel="alternate"]').values()].map((link, index) => ({
       link,
       order: index,
@@ -381,13 +376,10 @@ async function getResponseDataHTML(response, doc) {
         href: (new URL(link.getAttribute('href'), url)).toString(),
       }));
 
-    obj.items = [
-      ...feeds,
-      ...(obj.items || []),
-    ];
+    if (feeds.length > 0) {
+      obj.orderedItems = feeds;
+    }
   }
-
-  console.log('OBJ', obj);
 
   return obj;
 }
