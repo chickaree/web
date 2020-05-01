@@ -3,7 +3,7 @@ $body-color: #d0d5c6;
 $primary: $body-color;
 $body-bg: #3d4037;
 $thumbnail-border-color: $body-color;
-$card-bg: rgba(255, 255, 255, 0.1);
+$card-bg: lighten($body-bg, 10%);
 $list-group-bg: transparent;
 
 @import "~bootstrap/scss/bootstrap";
@@ -20,6 +20,13 @@ header {
   margin-top: -50%;
   .rounded {
     background-color: $body-bg;
+  }
+}
+
+.has-image .feed-icon  {
+  margin-top: -50%;
+  .rounded {
+    background-color: $card-bg;
   }
 }
 

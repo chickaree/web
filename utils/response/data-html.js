@@ -1,17 +1,11 @@
 import { DateTime } from 'luxon';
-import getSafeAssetUrl from '../safe-asset-url';
 import getResponseUrl from '../response-url';
 import createQueryText from '../query-text';
 import jsonldFrame from '../jsonld-frame';
 import toArray from '../to-array';
 import { Article, WebPage, ItemList } from '../../tree/schema';
+import getImageObj from '../image-obj';
 // import fetchResource from '../fetch-resource';
-
-const supportedTypes = [
-  'website',
-  'feed',
-  'article',
-];
 
 function createAttribute(doc) {
   return (querySelector, attribute) => {
@@ -88,54 +82,52 @@ async function getResponseDataHTML(response, doc) {
   const attribute = createAttribute(head);
   const text = createQueryText(head);
 
-  let type = '';
-  let sitename;
-  let title;
-  let description;
-  let banner;
-  let icon;
-  let manifest;
-  let datePublished;
-  let items = [];
+  const obj = {
+    url: url.toString(),
+    attributedTo: {
+      // @TODO Maybe make this more specific?
+      type: 'Object',
+    },
+  };
 
   // @TODO Get the "canonical" url
 
-  const manifestHref = attribute('link[rel="manifest"]', 'href');
-  if (manifestHref) {
-    manifest = new URL(manifestHref, url.toString());
-    // @TODO Move this higher up so we aren't getting it on every result.
-    // const manifest = await getManifest(manifestURL.toString());
-    // sitename = manifest.name || sitename;
-    // const appIcons = toArray(manifest.icons)
-    //   .filter((i) => !!i.sizes)
-    //   .map((i) => ({
-    //     ...i,
-    //     sizes: i.sizes.split(' ').map((size) => (
-    //       size.split('x').map((num) => parseInt(num, 10))
-    //     )).filter(([width, height]) => width === height).sort(([a], [b]) => a - b),
-    //   }))
-    //   .sort((a, b) => {
-    //     const [aSize] = a.sizes;
-    //     const [bSize] = b.sizes;
+  // const manifestHref = attribute('link[rel="manifest"]', 'href');
+  // if (manifestHref) {
+  //   manifest = new URL(manifestHref, url.toString());
+  //   // @TODO Move this higher up so we aren't getting it on every result.
+  //   const manifest = await getManifest(manifestURL.toString());
+  //   sitename = manifest.name || sitename;
+  //   const appIcons = toArray(manifest.icons)
+  //     .filter((i) => !!i.sizes)
+  //     .map((i) => ({
+  //       ...i,
+  //       sizes: i.sizes.split(' ').map((size) => (
+  //         size.split('x').map((num) => parseInt(num, 10))
+  //       )).filter(([width, height]) => width === height).sort(([a], [b]) => a - b),
+  //     }))
+  //     .sort((a, b) => {
+  //       const [aSize] = a.sizes;
+  //       const [bSize] = b.sizes;
 
-    //     const [aWidth] = aSize;
-    //     const [bWidth] = bSize;
+  //       const [aWidth] = aSize;
+  //       const [bWidth] = bSize;
 
-    //     if (aWidth > bWidth) {
-    //       return -1;
-    //     }
+  //       if (aWidth > bWidth) {
+  //         return -1;
+  //       }
 
-    //     if (bWidth > aWidth) {
-    //       return 1;
-    //     }
+  //       if (bWidth > aWidth) {
+  //         return 1;
+  //       }
 
-    //     return 0;
-    //   });
+  //       return 0;
+  //     });
 
-    // icon = appIcons.length > 0 && appIcons[0].src ? appIcons[0].src : icon;
-  }
+  //   icon = appIcons.length > 0 && appIcons[0].src ? appIcons[0].src : icon;
+  // }
 
-  if (!icon) {
+  if (!obj.attributedTo.icon) {
     const icons = [...head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').values()].filter((element) => !!element.hasAttribute('href'))
       .sort((a, b) => {
       // Prefer larger.
@@ -149,7 +141,7 @@ async function getResponseDataHTML(response, doc) {
         return bSize - aSize;
       }).map((link) => link.getAttribute('href'));
 
-    icon = icons.length > 0 ? icons[0] : icon;
+    obj.attributedTo.icon = icons.length > 0 ? getImageObj(icons[0], url) : obj.attributedTo.icon;
   }
 
   let jsonDocs = [];
@@ -179,33 +171,40 @@ async function getResponseDataHTML(response, doc) {
       let mainCreativeWork;
 
       if (intersection(toArray(data.type), Article).length) {
-        type = 'article';
+        obj.type = 'Article';
         mainCreativeWork = data;
       }
 
       if (intersection(toArray(data.type), WebPage).length) {
-        type = 'website';
+        // @TODO This seems like a lie...
+        obj.type = 'OrderedCollection';
         mainCreativeWork = data;
         if (data.mainEntity) {
-          items = toArray(data.mainEntity.itemListElement || []).map((item) => item.url);
+          obj.orderedItems = toArray(data.mainEntity.itemListElement || []).map((item) => ({
+            type: 'Link',
+            href: item.url,
+          }));
         }
       }
 
       if (intersection(toArray(data.type), ItemList).length) {
-        type = 'website';
-        items = toArray(data.itemListElement || []).map((item) => item.url);
+        obj.type = 'OrderedCollection';
+        obj.orderedItems = toArray(data.itemListElement || []).map((item) => ({
+          type: 'Link',
+          href: item.url,
+        }));
         if (data.mainEntityOfPage) {
           mainCreativeWork = data.mainEntityOfPage;
         }
       }
 
       if (mainCreativeWork) {
-        title = mainCreativeWork.name || mainCreativeWork.headline || title;
-        description = mainCreativeWork.description || mainCreativeWork.headline || description;
+        obj.name = mainCreativeWork.name || mainCreativeWork.headline || obj.name;
+        obj.summary = mainCreativeWork.description || mainCreativeWork.headline || obj.summary;
 
         if (data.datePublished) {
           try {
-            datePublished = DateTime.fromISO(data.datePublished, { zone: 'utc' }).toISO();
+            obj.published = DateTime.fromISO(data.datePublished, { zone: 'utc' }).toISO();
           } catch (e) {
             // Silence is Golden.
           }
@@ -213,15 +212,18 @@ async function getResponseDataHTML(response, doc) {
 
         if (mainCreativeWork.publisher) {
           const publishers = await jsonldFrame(docs, {
-            id: toArray(mainCreativeWork.publisher).map((p) => p.id),
+            id: [
+              ...toArray(mainCreativeWork.publisher).map((p) => p.id),
+              ...toArray(mainCreativeWork.author).map((p) => p.id),
+            ],
           });
 
           // What do we do if there is more than one?
           // Maybe use Intl.ListFormat and a pollyfill?
           const publisher = publishers['@graph'] ? publishers['@graph'][0] : publishers;
 
-          sitename = publisher.name || sitename;
-          description = publisher.description || description;
+          obj.attributedTo.name = publisher.name || obj.attributedTo.name;
+          obj.attributedTo.summary = publisher.description || obj.attributedTo.summary;
           // @TODO Should this be image if it's a Person and... logo if it's an org?
           const publisherImage = getBestImages([
             ...toArray(publisher.logo || []),
@@ -232,29 +234,29 @@ async function getResponseDataHTML(response, doc) {
           // @TODO Use response images... somehow.
           if (publisherImage.length > 0) {
             if (typeof publisherImage[0] === 'string') {
-              [icon] = publisherImage;
+              obj.attributedTo.icon = getImageObj(publisherImage[0], url);
             } else if (publisherImage[0].url) {
               // Only override an existing icon if the width & height are a 1:1 ratio.
-              if (icon) {
+              if (obj.attributedTo.icon) {
                 if (publisherImage[0].width / publisherImage[0].height === 1) {
-                  icon = publisherImage[0].url;
+                  obj.attributedTo.icon = getImageObj(publisherImage[0].url, url);
                 }
               } else {
-                icon = publisherImage[0].url;
+                obj.attributedTo.icon = getImageObj(publisherImage[0].url, url);
               }
             }
           }
         }
 
-        const ratio = type === 'website' ? 21 / 9 : 16 / 9;
+        const ratio = obj.type === 'Collection' ? 21 / 9 : 16 / 9;
         const image = getBestImages(mainCreativeWork.image, ratio);
 
         // @TODO Use response images... somehow.
         if (image.length > 0) {
           if (typeof image[0] === 'string') {
-            [banner] = image;
+            obj.image = getImageObj(image[0], url);
           } else if (image[0].url) {
-            banner = image[0].url;
+            obj.image = getImageObj(image[0].url, url);
           }
         }
       }
@@ -263,124 +265,123 @@ async function getResponseDataHTML(response, doc) {
     }
   }
 
-  if (!type) {
-    // If it's the root of the site, always assume it's a website.
+  if (!obj.type) {
+    // If it's the root of the site, always assume it's a collection.
     if (url.pathname === '/') {
-      type = 'website';
+      obj.type = 'OrderedCollection';
     } else {
-      type = attribute('meta[property="og:type"], meta[name="og:type"]', 'content');
-      // If the type returned is not supported, override it to an article for now.
-      if (!supportedTypes.includes(type)) {
-        type = 'article';
+      const type = attribute('meta[property="og:type"], meta[name="og:type"]', 'content');
+      if (type === 'website') {
+        obj.type = 'OrderedCollection';
+      } else {
+        // @TODO Figure out how to handle other types.
+        obj.type = 'Article';
       }
     }
   }
 
-  if (!title) {
-    title = attribute('meta[property="og:title"], meta[name="og:title"]', 'content');
+  if (!obj.name) {
+    obj.name = attribute('meta[property="og:title"], meta[name="og:title"]', 'content');
   }
-  if (!title) {
-    title = text('title');
-  }
-
-  if (!sitename) {
-    sitename = attribute('meta[property="og:site_name"], meta[name="og:site_name"]', 'content');
-  }
-  if (!sitename) {
-    sitename = attribute('meta[name="application-name"]', 'content');
-  }
-  if (!sitename) {
-    sitename = text('title');
+  if (!obj.name) {
+    obj.name = text('title');
   }
 
-  if (!description) {
-    description = attribute('meta[property="og:description"], meta[name="og:description"]', 'content');
+  if (!obj.attributedTo.name) {
+    obj.attributedTo.name = attribute('meta[property="og:site_name"], meta[name="og:site_name"]', 'content');
   }
-  if (!description) {
-    description = attribute('meta[name="description"]', 'content');
+  if (!obj.attributedTo.name) {
+    obj.attributedTo.name = attribute('meta[name="application-name"]', 'content');
+  }
+  if (!obj.attributedTo.name) {
+    obj.attributedTo.name = text('title');
   }
 
-  if (!banner) {
-    banner = attribute('meta[property="og:image"], meta[name="og:image"]', 'content');
+  if (!obj.summary) {
+    obj.summary = attribute('meta[property="og:description"], meta[name="og:description"]', 'content');
+  }
+  if (!obj.summary) {
+    obj.summary = attribute('meta[name="description"]', 'content');
   }
 
-  if (!datePublished) {
+  if (!obj.image) {
+    obj.image = getImageObj(attribute('meta[property="og:image"], meta[name="og:image"]', 'content'), url);
+  }
+
+  if (!obj.published) {
     const datetime = attribute('meta[property="article:published_time"], meta[name="article:published_time"]', 'content');
     if (datetime) {
-      datePublished = DateTime.fromISO(datetime, { zone: 'utc' }).toISO();
+      obj.published = DateTime.fromISO(datetime, { zone: 'utc' }).toISO();
     }
   }
 
-  const feeds = [...head.querySelectorAll('link[rel="alternate"]').values()].map((link, index) => ({
-    link,
-    order: index,
-  })).filter(({ link }) => {
-    // If the feed is missing an href, it should not be considered.
-    if (!link.hasAttribute('href')) {
-      return false;
-    }
-
-    // If the link is missing a type, it's not a feed.
-    if (!link.hasAttribute('type')) {
-      return false;
-    }
-
-    // Only include types we currently support.
-    if (!['application/json', 'application/xml', 'application/rss+xml', 'application/atom+xml', 'text/xml'].includes(link.getAttribute('type'))) {
-      return false;
-    }
-
-    return true;
-  })
-    .sort(({ link: a }, { link: b }) => {
-    // Prefer JSON.
-      if (!a.hasAttribute('type') || !b.hasAttribute('type')) {
-        return 0;
+  // If the item is a collection and it's empty, get the referenced RSS/Atom feeds.
+  if (obj.type === 'OrderedCollection' && (!obj.orderedItems || obj.orderedItems.length === 0)) {
+    const feeds = [...head.querySelectorAll('link[rel="alternate"]').values()].map((link, index) => ({
+      link,
+      order: index,
+    })).filter(({ link }) => {
+      // If the feed is missing an href, it should not be considered.
+      if (!link.hasAttribute('href')) {
+        return false;
       }
 
-      if (a.getAttribute('type') === b.getAttribute('type')) {
-        return 0;
+      // If the link is missing a type, it's not a feed.
+      if (!link.hasAttribute('type')) {
+        return false;
       }
 
-      if (a.getAttribute('type') === 'application/json') {
-        return -1;
+      // Only include types we currently support.
+      if (!['application/json', 'application/xml', 'application/rss+xml', 'application/atom+xml', 'text/xml'].includes(link.getAttribute('type'))) {
+        return false;
       }
 
-      if (b.getAttribute('type') === 'application/json') {
-        return 1;
-      }
-
-      return 0;
+      return true;
     })
-    .reduce((acc, item) => {
-    // Dedupe the feeds by the title.
-      if (acc.find((i) => i.link.getAttribute('title') === item.link.getAttribute('title'))) {
-        return acc;
-      }
+      .sort(({ link: a }, { link: b }) => {
+      // Prefer JSON.
+        if (!a.hasAttribute('type') || !b.hasAttribute('type')) {
+          return 0;
+        }
 
-      return [
-        ...acc,
-        item,
-      ];
-    }, [])
-    .sort((a, b) => a.order - b.order)
-    .map(({ link }) => (new URL(link.getAttribute('href'), url)).toString());
+        if (a.getAttribute('type') === b.getAttribute('type')) {
+          return 0;
+        }
 
-  return {
-    type,
-    resource: {
-      url: url.toString(),
-      manifest,
-      datePublished,
-      title,
-      sitename,
-      description,
-      banner: banner ? getSafeAssetUrl(banner, url.toString()) : null,
-      icon: icon ? getSafeAssetUrl(icon, url.toString()) : null,
-      feeds,
-      items,
-    },
-  };
+        if (a.getAttribute('type') === 'application/json') {
+          return -1;
+        }
+
+        if (b.getAttribute('type') === 'application/json') {
+          return 1;
+        }
+
+        return 0;
+      })
+      .reduce((acc, item) => {
+      // Dedupe the feeds by the title.
+        if (acc.find((i) => i.link.getAttribute('title') === item.link.getAttribute('title'))) {
+          return acc;
+        }
+
+        return [
+          ...acc,
+          item,
+        ];
+      }, [])
+      .sort((a, b) => a.order - b.order)
+      .map(({ link }) => ({
+        type: 'Link',
+        name: link.getAttribute('title'),
+        href: (new URL(link.getAttribute('href'), url)).toString(),
+      }));
+
+    if (feeds.length > 0) {
+      obj.orderedItems = feeds;
+    }
+  }
+
+  return obj;
 }
 
 export default getResponseDataHTML;

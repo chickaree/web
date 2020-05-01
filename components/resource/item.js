@@ -3,32 +3,31 @@ import PageTitle from '../page-title';
 
 function Item({
   resource: {
-    title,
+    name,
     url,
-    description,
-    icon,
-    banner,
-    sitename,
-    datePublished,
+    summary,
+    image,
+    published,
+    attributedTo,
   },
 }) {
   const { origin } = new URL(url);
 
   return (
     <>
-      <PageTitle parts={[title, sitename]} />
+      <PageTitle parts={[name, attributedTo.name]} />
       <div className="container mt-3">
         <div className="row">
           <div className="col col-lg-8 offset-lg-2">
             <Article
+              // Move the source to `attributedTo`
               source={origin}
-              title={title}
+              name={name}
               url={url}
-              description={description}
-              icon={icon}
-              banner={banner}
-              sitename={sitename}
-              datePublished={datePublished}
+              summary={summary}
+              image={image}
+              attributedTo={attributedTo}
+              published={published}
             />
           </div>
         </div>
