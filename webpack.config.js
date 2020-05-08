@@ -9,8 +9,8 @@ module.exports = {
       {
         test: /\.jsonld$/,
         type: 'json',
-      }
-    ]
+      },
+    ],
   },
   externals: [
     nodeExternals({

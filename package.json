@@ -1,17 +1,20 @@
 {
   "name": "@chickaree/web",
-  "version": "1.0.0",
-  "main": "dist/main.js",
+  "version": "1.0.1",
   "license": "AGPL-3.0-or-later",
+  "main": "dist/main.js",
+  "files": [
+    "/html"
+  ],
   "scripts": {
     "install": "napa",
     "dev": "next dev",
-    "build": "next build && next export",
+    "build": "next build && next export -o ./html",
     "start": "next start",
-    "preview": "next build && next export && wrangler preview",
-    "deploy": "next build && next export && wrangler publish",
+    "preview": "next build && next export -o ./html && wrangler preview",
+    "deploy": "next build && next export -o ./html && wrangler publish",
     "test": "next build && eslint --ignore-path .gitignore .",
-    "publishOnly": "next build && next export && webpack-cli"
+    "prepublishOnly": "next build && next export -o ./html && webpack-cli"
   },
   "dependencies": {
     "@cinematix/next-cloudflare": "^1.0.1",

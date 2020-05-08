@@ -6,5 +6,5 @@ route = "chickar.ee/*"
 webpack_config = "worker.config.js"
 
 [site]
-bucket = "./out"
+bucket = "./html"
 entry-point = ""
