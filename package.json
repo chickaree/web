@@ -1,7 +1,6 @@
 {
   "name": "@chickaree/web",
   "version": "0.1.0",
-  "private": true,
   "main": "index.js",
   "scripts": {
     "install": "napa",
@@ -10,7 +9,8 @@
     "start": "next start",
     "preview": "next build && next export && wrangler preview",
     "deploy": "next build && next export && wrangler publish",
-    "test": "next build && eslint --ignore-path .gitignore ."
+    "test": "next build && eslint --ignore-path .gitignore .",
+    "publishOnly": "next build && next export"
   },
   "dependencies": {
     "@cinematix/next-cloudflare": "^1.0.1",
