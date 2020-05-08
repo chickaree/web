@@ -1,10 +1,10 @@
 {
   "name": "@chickaree/web",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "license": "AGPL-3.0-or-later",
   "main": "dist/main.js",
   "files": [
-    "/html"
+    "/html/*"
   ],
   "scripts": {
     "install": "napa",
