@@ -1,8 +1,7 @@
 name = "chickaree-web"
 type = "webpack"
 account_id = "2659099e440328a773821e7db5363a84"
-zone_id = "ed5594d679827145d1d47a063b123a22"
-route = "chickar.ee/*"
+workers_dev = true
 webpack_config = "worker.config.js"
 
 [site]
