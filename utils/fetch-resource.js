@@ -30,7 +30,7 @@ function fetchResource(resource, init = {}) {
       const hash = path === '/' ? '' : encode(path.substring(1));
       const remoteResource = `${url.host}${hash ? `/${hash}` : ''}`;
       // Try the proxy!
-      return fromFetch(`https://chickar.ee/api/${remoteResource}`, options);
+      return fromFetch(`https://chickar.ee/proxy/${remoteResource}`, options);
     }),
   );
 }
