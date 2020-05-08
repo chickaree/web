@@ -36,7 +36,7 @@
     "eslint-plugin-react": "^7.19.0",
     "eslint-plugin-react-hooks": "^2.5.0",
     "napa": "^3.0.0",
-    "next": "^9.3.2",
+    "next": "^9.3.6",
     "sass": "^1.26.5",
     "typeface-lato": "0.0.75",
     "webpack": "^4.43.0",
