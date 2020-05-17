@@ -13,7 +13,7 @@
     "start": "next start",
     "preview": "next build && next export -o ./html && wrangler preview",
     "deploy": "next build && next export -o ./html && wrangler publish",
-    "test": "next build && eslint --ignore-path .gitignore .",
+    "test": "eslint --ignore-path .gitignore .",
     "prepublishOnly": "next build && next export -o ./html && webpack-cli"
   },
   "dependencies": {
