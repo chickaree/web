@@ -17,7 +17,7 @@
     "prepublishOnly": "next build && next export -o ./html && webpack-cli"
   },
   "dependencies": {
-    "@cinematix/next-cloudflare": "^1.0.1",
+    "@cinematix/next-cloudflare": "^1.1.1",
     "@cinematix/reactor": "^2.0.0",
     "base64url": "^3.0.1",
     "jsdom": "^16.2.2",
