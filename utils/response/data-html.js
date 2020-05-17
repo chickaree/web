@@ -76,8 +76,7 @@ function getBestImages(data, ratio) {
 //   return response.json();
 // }
 
-async function getResponseDataHTML(response, doc) {
-  const url = getResponseUrl(response);
+async function getResponseDataHTML(url, doc) {
   const head = doc.querySelector('head');
   const attribute = createAttribute(head);
   const text = createQueryText(head);

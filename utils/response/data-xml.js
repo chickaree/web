@@ -20,9 +20,7 @@ function createQueryAllAttribute(doc) {
   };
 }
 
-async function getResponseDataXML(response, doc) {
-  const url = getResponseUrl(response);
-
+async function getResponseDataXML(url, doc) {
   const root = doc.documentElement.tagName;
 
   const text = createQueryText(doc);

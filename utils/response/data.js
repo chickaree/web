@@ -1,6 +1,7 @@
 import getResponseDataJson from './data-json';
 import getResponseDataHTML from './data-html';
 import getResponseDataXML from './data-xml';
+import getResponseUrl from '../response-url';
 
 export const MIME_TYPES = [
   'application/json',
@@ -25,8 +26,11 @@ async function getResponseData(response) {
     return null;
   }
 
+  const url = getResponseUrl(response);
+
   if (mimeType === 'application/json') {
-    return getResponseDataJson(response);
+    const data = await response.json();
+    return getResponseDataJson(url, data);
   }
 
   // DOMParser does not support rss/atom
@@ -39,10 +43,10 @@ async function getResponseData(response) {
   const doc = parser.parseFromString(text, mimeType);
 
   if (doc instanceof HTMLDocument) {
-    return getResponseDataHTML(response, doc);
+    return getResponseDataHTML(url, doc);
   }
   if (doc instanceof XMLDocument) {
-    return getResponseDataXML(response, doc);
+    return getResponseDataXML(url, doc);
   }
 
   return null;
