@@ -1,5 +1,7 @@
 FROM node:lts-alpine
 
+ENV PORT 80
+
 COPY . /app
 
 WORKDIR /app
