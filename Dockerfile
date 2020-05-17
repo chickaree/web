@@ -6,7 +6,7 @@ COPY . /app
 
 WORKDIR /app
 
-RUN npm install --verbose; \
+RUN npm install --unsafe-perm --verbose; \
   npm run build;
 
 CMD npm start;
