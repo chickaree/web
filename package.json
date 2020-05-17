@@ -7,7 +7,7 @@
     "/html/*"
   ],
   "scripts": {
-    "prepare": "napa",
+    "install": "napa",
     "dev": "next dev",
     "build": "next build && next export -o ./html",
     "start": "next start -p ${PORT:-3000}",
