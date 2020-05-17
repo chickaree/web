@@ -1,19 +1,28 @@
 name: Build
 
-on:
-  push:
-    branches-ignore:
-      - 'master'
+on: [push]
 
 jobs:
-  build:
-
+  static:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-node@v1
     - run: npm install
     - run: npm test
     - run: npm run build
+    - name: 'Deploy'
+      if: github.ref == 'refs/heads/master'
+      uses: cloudflare/wrangler-action@1.1.0
+      with:
+        apiToken: ${{ secrets.CF_API_TOKEN }}
+  docker:
+    if: github.ref == 'refs/heads/master'
+    needs: [static]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker build --tag docker.pkg.github.com/${GITHUB_REPOSITORY}/web .
+      - run: docker login https://docker.pkg.github.com -u chickaree --password ${{ secrets.GITHUB_TOKEN }}
+      - run: docker push docker.pkg.github.com/${GITHUB_REPOSITORY}/web
 
