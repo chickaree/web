@@ -2,6 +2,16 @@ import getResponseDataJson from './data-json';
 import getResponseDataHTML from './data-html';
 import getResponseDataXML from './data-xml';
 
+export const MIME_TYPES = [
+  'application/json',
+  'application/rss+xml',
+  'application/atom+xml',
+  'text/html',
+  'text/xml',
+  'application/xml',
+  'application/xhtml+xml',
+];
+
 async function getResponseData(response) {
   if (!response.headers.has('Content-Type')) {
     return null;
@@ -10,9 +20,13 @@ async function getResponseData(response) {
   // @TODO Get data from Link headers
 
   let mimeType = response.headers.get('Content-Type').split(';').shift().trim();
+
+  if (!MIME_TYPES.includes(mimeType)) {
+    return null;
+  }
+
   if (mimeType === 'application/json') {
-    const data = await response.json();
-    return getResponseDataJson(response, data);
+    return getResponseDataJson(response);
   }
 
   // DOMParser does not support rss/atom

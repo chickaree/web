@@ -1,7 +1,8 @@
 import getResponseUrl from '../response-url';
 import getImageObj from '../image-obj';
 
-function getResponseDataJson(response, data) {
+async function getResponseDataJson(response) {
+  const data = await response.json();
   const url = getResponseUrl(response);
   return {
     type: 'OrderedCollection',
