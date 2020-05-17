@@ -1,5 +1,4 @@
 import { DateTime } from 'luxon';
-import getResponseUrl from '../response-url';
 import createQueryText from '../query-text';
 import jsonldFrame from '../jsonld-frame';
 import toArray from '../to-array';

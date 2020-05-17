@@ -1,4 +1,3 @@
-import getResponseUrl from '../response-url';
 import createQueryText from '../query-text';
 import getImageObj from '../image-obj';
 
