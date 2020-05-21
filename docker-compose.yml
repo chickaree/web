@@ -8,7 +8,6 @@ services:
       - ingress
     environment:
       VIRTUAL_HOST: 'chickar.ee'
-      LETSENCRYPT_HOST: 'chickar.ee'
 networks:
   ingress:
     external:
