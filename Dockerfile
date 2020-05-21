@@ -1,5 +1,7 @@
 FROM node:lts-alpine
 
+EXPOSE 80
+
 ENV PORT 80
 
 COPY . /app
