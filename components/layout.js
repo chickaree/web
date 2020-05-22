@@ -8,7 +8,6 @@ const Layout = ({ children }) => (
       <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
       <meta property="og:title" content="Chickaree" />
       <meta property="og:description" content="A new social network designed to reach all your followers without an algorithm getting in the way." />
-      <meta property="og:url" content="https://chickar.ee/" />
       <meta property="og:type" content="website" />
       <meta property="og:image" content="https://chickar.ee/img/og-background.png" />
     </Head>
