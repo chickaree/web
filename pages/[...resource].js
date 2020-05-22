@@ -13,6 +13,7 @@ import Layout from '../components/layout';
 import getResponseData from '../utils/response/data';
 import Collection from '../components/resource/collection';
 import Item from '../components/resource/item';
+import Meta from '../components/meta';
 
 const initialState = {
   resource: {},
@@ -105,6 +106,7 @@ function Resource() {
 
   return (
     <Layout>
+      <Meta resource={state.resource} />
       {content}
     </Layout>
   );

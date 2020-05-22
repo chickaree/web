@@ -5,11 +5,11 @@ const Layout = ({ children }) => (
   <>
     <Head>
       <title>Chickaree</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-      <meta property="og:title" content="Chickaree" />
-      <meta property="og:description" content="A new social network designed to reach all your followers without an algorithm getting in the way." />
-      <meta property="og:type" content="website" />
-      <meta property="og:image" content="https://chickar.ee/img/og-background.png" />
+      <meta key="viewport" name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+      <meta key="og:title" property="og:title" content="Chickaree" />
+      <meta key="og:description" property="og:description" content="A new social network designed to reach all your followers without an algorithm getting in the way." />
+      <meta key="og:type" property="og:type" content="website" />
+      <meta key="og:image" property="og:image" content="https://chickar.ee/img/og-background.png" />
     </Head>
     <header className="sticky-top">
       <div className="container">

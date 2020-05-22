@@ -13,7 +13,6 @@ import ResourceLink from '../resource-link';
 import fetchResource from '../../utils/fetch-resource';
 import Icon from '../icon';
 import getResponseData from '../../utils/response/data';
-import PageTitle from '../page-title';
 import Article from '../article';
 import getLinkHref from '../../utils/link-href';
 import Card from '../card';
@@ -119,7 +118,7 @@ function FeedList({ feeds, icon }) {
       ];
     }
     return (
-      <Card>
+      <Card key={feed.url}>
         <div className={className.join(' ')}>
           <FeedImage href={feed.url} src={imgSrc} alt={feed.name} />
           <div className="card-body">
@@ -272,7 +271,6 @@ function Collection({
 
   return (
     <>
-      <PageTitle parts={[title]} />
       <Banner src={getLinkHref(image) || getLinkHref(attributedTo.image)} alt={title} />
       <div className={className.join(' ')}>
         <div className="row mt-3 mb-3 d-flex d-lg-none">

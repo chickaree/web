@@ -1,5 +1,4 @@
 import Article from '../article';
-import PageTitle from '../page-title';
 
 function Item({
   resource: {
@@ -15,7 +14,6 @@ function Item({
 
   return (
     <>
-      <PageTitle parts={[name, attributedTo.name]} />
       <div className="container mt-3">
         <div className="row">
           <div className="col col-lg-8 offset-lg-2">
