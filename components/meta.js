@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import Head from 'next/head';
 import getResourceLinkData from '../utils/resource-link-data';
 
@@ -16,58 +17,46 @@ function createTitle(pieces = []) {
   ].filter((part) => !!part).join(' | ');
 }
 
-function Meta({
-  resource,
-}) {
-  if (!resource || !resource.url) {
-    return null
-  }
-
+function getResourceMetadata(resource) {
+  const og = {};
   const schema = {
     '@context': 'http://schema.org/',
   };
+  let title;
+
+  if (!resource || !resource.url) {
+    return {
+      og,
+      schema,
+      title,
+    };
+  }
 
   const url = new URL(getResourceLinkData(resource.url).as, URL_BASE);
   schema.url = url.toString();
-  const ogUrl = (
-    <meta key="og:url" property="og:url" content={url.toString()} />
-  );
+  og.url = url.toString();
 
-  let ogTitle;
   if (resource.name) {
     schema.name = resource.name;
-    ogTitle = (
-      <meta key="og:title" property="og:title" content={resource.name} />
-    );
+    og.title = resource.name;
   }
 
-  let ogDescription;
   if (resource.summary) {
     schema.description = resource.summary;
-    ogDescription = (
-      <meta key="og:description" property="og:description" content={resource.summary} />
-    );
+    og.description = resource.summary;
   }
 
-  let ogImage;
   if (resource.image && resource.image.href) {
     schema.image = resource.image.href;
-    // @TODO check on other type!
     schema.primaryImageOfPage = resource.image.href;
-    ogImage = (
-      <meta key="og:image" property="og:image" content={resource.image.href} />
-    );
+    og.image = resource.image.href;
   }
 
   if (resource.published) {
-   schema.datePublished = resource.published;       
+    schema.datePublished = resource.published;
   }
 
-  let titleTag;
-  let ogType;
   if (resource.type) {
-    let type;
-    let title;
     switch (resource.type) {
       case 'OrderedCollection':
         schema['@type'] = 'ProfilePage';
@@ -76,13 +65,16 @@ function Meta({
             '@type': 'Brand',
             name: resource.attributedTo.name,
             description: resource.attributedTo.summary,
-            logo: resource.attributedTo.icon && resource.attributedTo.icon.href ? resource.attributedTo.icon.href : undefined,
+            logo: resource.attributedTo.icon && resource.attributedTo.icon.href
+              ? resource.attributedTo.icon.href
+              : undefined,
           };
         }
         schema.mainEntity = {
           '@id': url.toString(),
           '@type': 'ItemList',
           sameAs: resource.url,
+          datePublished: schema.datePublished,
           itemListElement: resource.orderedItems.map(({ href }) => {
             const itemURL = new URL(getResourceLinkData(href).as, URL_BASE);
 
@@ -94,7 +86,7 @@ function Meta({
             };
           }),
         };
-        type = 'profile';
+        og.type = 'profile';
         if (resource.name) {
           title = createTitle(resource.name);
         } else if (resource.attributedTo && resource.attributedTo.name) {
@@ -107,7 +99,7 @@ function Meta({
           '@id': url.toString(),
           '@type': 'SocialMediaPosting',
           url: url.toString(),
-          published: schema.published,
+          datePublished: schema.datePublished,
           sharedContent: {
             '@type': 'Article',
             title: schema.title,
@@ -131,38 +123,43 @@ function Meta({
             sameAs: origin,
             brand: {
               '@type': 'Brand',
-              logo: resource.attributedTo.icon && resource.attributedTo.icon.href ? resource.attributedTo.icon.href : undefined,
+              logo: resource.attributedTo.icon && resource.attributedTo.icon.href
+                ? resource.attributedTo.icon.href
+                : undefined,
             },
           };
         }
 
-        type = 'article';
+        og.type = 'article';
         title = createTitle([resource.name, resource.attributedTo.name]);
         break;
       default:
-        type = 'website';
+        og.type = 'website';
         title = createTitle();
         break;
     }
-
-    titleTag = (
-      <title>{title}</title>
-    );
-    ogType = (
-      <meta key="og:type" property="og:type" content={type} />
-    );
   }
 
-  console.log(schema);
+  return {
+    title,
+    og,
+    schema,
+  };
+}
+
+function Meta({
+  resource,
+}) {
+  const { og, schema, title } = useMemo(() => getResourceMetadata(resource), [resource]);
 
   return (
     <Head>
-      {titleTag}
-      {ogTitle}
-      {ogUrl}
-      {ogDescription}
-      {ogImage}
-      {ogType}
+      {title ? <title>{title}</title> : null}
+      {og.title ? <meta key="og:title" property="og:title" content={og.title} /> : null}
+      {og.url ? <meta key="og:url" property="og:url" content={og.url} /> : null}
+      {og.description ? <meta key="og:description" property="og:description" content={og.description} /> : null}
+      {og.image ? <meta key="og:image" property="og:image" content={og.image} /> : null}
+      {og.type ? <meta key="og:type" property="og:type" content={og.type} /> : null}
       <script key="schema" type="application/ld+json">{JSON.stringify(schema)}</script>
     </Head>
   );
