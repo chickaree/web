@@ -1,6 +1,8 @@
 import Head from 'next/head';
 import getResourceLinkData from '../utils/resource-link-data';
 
+const URL_BASE = 'https://chickar.ee';
+
 function createTitle(pieces = []) {
   let parts = pieces;
 
@@ -25,7 +27,7 @@ function Meta({
     '@context': 'http://schema.org/',
   };
 
-  const url = new URL(getResourceLinkData(resource.url).as, 'https://chickar.ee');
+  const url = new URL(getResourceLinkData(resource.url).as, URL_BASE);
   schema.url = url.toString();
   const ogUrl = (
     <meta key="og:url" property="og:url" content={url.toString()} />
@@ -82,7 +84,7 @@ function Meta({
           '@type': 'ItemList',
           sameAs: resource.url,
           itemListElement: resource.orderedItems.map(({ href }) => {
-            const itemURL = new URL(getResourceLinkData(href).as, 'https://chickar.ee');
+            const itemURL = new URL(getResourceLinkData(href).as, URL_BASE);
 
             return {
               '@id': itemURL.toString(),
@@ -118,7 +120,7 @@ function Meta({
 
         if (resource.attributedTo) {
           const { origin } = new URL(resource.url);
-          const originURL = new URL(getResourceLinkData(origin).as, 'https://chickar.ee');
+          const originURL = new URL(getResourceLinkData(origin).as, URL_BASE);
 
           schema.mainEntity.author = {
             '@id': originURL.toString(),
