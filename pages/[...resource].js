@@ -6,7 +6,7 @@ import {
   of, concat, EMPTY, from,
 } from 'rxjs';
 import { switchMap, filter, flatMap } from 'rxjs/operators';
-import getResourceLinkData from '../utils/resource-link-data';
+import getResourceLinkData from '../utils/resource/link-data';
 import fetchResource from '../utils/fetch-resource';
 import getResponseUrl from '../utils/response-url';
 import Layout from '../components/layout';

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import getResourceLinkData from '../utils/resource-link-data';
+import getResourceLinkData from '../utils/resource/link-data';
 
 function ResourceLink({
   resource,
