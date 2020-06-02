@@ -73,7 +73,7 @@ function getResourceMetadata(resource) {
           '@type': 'ItemList',
           sameAs: resource.url,
           datePublished: schema.datePublished,
-          itemListElement: resource.orderedItems.map(({ href }) => {
+          itemListElement: (resource.orderedItems || []).map(({ href }) => {
             const itemURL = new URL(getResourceLinkData(href).as, URL_BASE);
 
             return {
