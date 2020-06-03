@@ -35,17 +35,15 @@ function FeedImage({ href, src, alt }) {
   }
 
   return (
-    <div className="row">
-      <div className="col">
-        <div className="embed-responsive embed-responsive-21by9 card-img-top">
-          <ResourceLink resource={href}>
-            <a>
-              <img src={src} alt={alt} className="embed-responsive-item" loading="lazy" />
-            </a>
-          </ResourceLink>
-        </div>
+    <>
+      <div className="embed-responsive embed-responsive-21by9 card-img-top">
+        <ResourceLink resource={href}>
+          <a>
+            <img src={src} alt={alt} className="embed-responsive-item" loading="lazy" />
+          </a>
+        </ResourceLink>
       </div>
-    </div>
+    </>
   );
 }
 
