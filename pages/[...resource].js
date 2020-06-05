@@ -37,11 +37,35 @@ function resourceReactor(value$) {
   return value$.pipe(
     filter(([domain]) => !!domain),
     switchMap(([domain, hash]) => {
+      let init = {
+        type: 'RESET',
+      };
+
+      const element = document.getElementById('resource');
+      if (element) {
+        const { dataset } = element;
+        if (
+          element.tagName === 'SCRIPT'
+          && dataset.domain === domain
+          && dataset.hash === (hash || '')
+        ) {
+          try {
+            init = {
+              type: 'RESOURCE_SET',
+              payload: JSON.parse(element.innerText),
+            };
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error(e);
+          }
+        }
+      }
+
       const path = hash ? `/${decode(hash)}` : '/';
       const resource = `https://${domain}${path}`;
 
       return concat(
-        of({ type: 'RESET' }),
+        of(init),
         fetchResource(resource).pipe(
           flatMap((response) => {
             const url = getResponseUrl(response);
