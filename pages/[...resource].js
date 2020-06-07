@@ -1,4 +1,4 @@
-import { useReducer } from 'react';
+import { useReducer, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { decode } from 'base64url';
 import useReactor from '@cinematix/reactor';
@@ -115,18 +115,19 @@ function Resource() {
     }
   }, [domain, hash]);
 
-  let content;
-  switch (state.resource.type) {
-    case 'OrderedCollection':
-      content = <Collection resource={state.resource} />;
-      break;
-    case 'Article':
-      content = <Item resource={state.resource} />;
-      break;
-    default:
-      content = null;
-      break;
-  }
+  const content = useMemo(() => {
+    switch (state.resource.type) {
+      case 'OrderedCollection':
+        return <Collection resource={state.resource} />;
+      case 'Article':
+        return <Item resource={state.resource} />;
+      default:
+        return null;
+    }
+  }, [
+    // Deep comparison
+    JSON.stringify(state.resource),
+  ]);
 
   return (
     <Layout>
