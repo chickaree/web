@@ -115,6 +115,14 @@ function Resource() {
     }
   }, [domain, hash]);
 
+  const res = JSON.stringify(state.resource);
+
+  const meta = useMemo(() => (
+    <Meta resource={state.resource} />
+  ), [
+    res,
+  ]);
+
   const content = useMemo(() => {
     switch (state.resource.type) {
       case 'OrderedCollection':
@@ -126,12 +134,12 @@ function Resource() {
     }
   }, [
     // Deep comparison
-    JSON.stringify(state.resource),
+    res,
   ]);
 
   return (
     <Layout>
-      <Meta resource={state.resource} />
+      {meta}
       {content}
     </Layout>
   );
