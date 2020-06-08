@@ -1,4 +1,9 @@
-import { useReducer, useMemo, useContext, useCallback } from 'react';
+import {
+  useReducer,
+  useMemo,
+  useContext,
+  useCallback,
+} from 'react';
 import { from, of } from 'rxjs';
 import {
   switchMap,
@@ -113,7 +118,9 @@ function FollowButton({ href }) {
   );
 }
 
-function CollectionIcon({ src, alt, href, className }) {
+function CollectionIcon({
+  src, alt, href, className,
+}) {
   if (!src) {
     return null;
   }
