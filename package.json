@@ -26,7 +26,8 @@
     "next": "^9.4.1",
     "react": "16.13.0",
     "react-dom": "16.13.0",
-    "rxjs": "^6.5.4"
+    "rxjs": "^6.5.5",
+    "ulid": "^2.3.0"
   },
   "devDependencies": {
     "@cloudflare/wrangler": "^1.8.4",

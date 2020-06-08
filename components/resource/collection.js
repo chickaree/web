@@ -1,4 +1,4 @@
-import { useReducer, useMemo } from 'react';
+import { useReducer, useMemo, useContext, useCallback } from 'react';
 import { from, of } from 'rxjs';
 import {
   switchMap,
@@ -9,6 +9,7 @@ import {
 } from 'rxjs/operators';
 import { DateTime } from 'luxon';
 import useReactor from '@cinematix/reactor';
+import { ulid } from 'ulid';
 import ResourceLink from '../resource-link';
 import fetchResource from '../../utils/fetch-resource';
 import Icon from '../icon';
@@ -16,6 +17,8 @@ import getResponseData from '../../utils/response/data';
 import Article from '../article';
 import getLinkHref from '../../utils/link-href';
 import Card from '../card';
+import ActivityContext from '../../context/activity';
+import AppContext from '../../context/app';
 
 function Banner({ src, alt }) {
   if (!src) {
@@ -61,16 +64,66 @@ function FeedIcon({ href, src, alt }) {
   );
 }
 
-function CollectionIcon({ src, alt, className }) {
+function FollowButton({ href }) {
+  const subject = useContext(ActivityContext);
+  const [state] = useContext(AppContext);
+
+  const following = useMemo(() => (
+    !!state.following.find((h) => h === href)
+  ), [
+    href,
+    state.following,
+  ]);
+
+  const onClick = useCallback(() => {
+    const id = `https://chickar.ee/action/${ulid().toLowerCase()}`;
+    const follow = {
+      type: 'Follow',
+      object: {
+        type: 'Link',
+        href,
+      },
+    };
+
+    let activity;
+    if (following) {
+      activity = {
+        id,
+        type: 'Undo',
+        object: follow,
+      };
+    } else {
+      activity = {
+        id,
+        ...follow,
+      };
+    }
+
+    subject.next(activity);
+  }, [
+    subject,
+    following,
+    href,
+  ]);
+
+  const className = following ? 'btn-primary' : 'btn-outline-primary';
+
+  return (
+    <button type="button" className={`btn btn-block ${className}`} onClick={onClick}>{following ? 'Unfollow' : 'Follow'}</button>
+  );
+}
+
+function CollectionIcon({ src, alt, href, className }) {
   if (!src) {
     return null;
   }
 
   return (
     <div className={className}>
-      <div className="icon">
+      <div className="icon mb-3">
         <Icon src={src} alt={alt} />
       </div>
+      <FollowButton href={href} />
     </div>
   );
 }
@@ -272,7 +325,7 @@ function Collection({
       <Banner src={getLinkHref(image) || getLinkHref(attributedTo.image)} alt={title} />
       <div className={className.join(' ')}>
         <div className="row mt-3 mb-3 d-flex d-lg-none">
-          <CollectionIcon src={iconSrc} alt={title} className="col-4" />
+          <CollectionIcon src={iconSrc} href={url} alt={title} className="col-4" />
           <div className={iconSrc ? 'col' : 'col-lg-8 offset-lg-2 col'}>
             <div className="row">
               <div className="col-12 col-lg-auto">
@@ -283,7 +336,7 @@ function Collection({
           </div>
         </div>
         <div className="row mt-3 mb-3">
-          <CollectionIcon src={iconSrc} alt={title} className="col-lg-2 d-lg-block d-none" />
+          <CollectionIcon src={iconSrc} href={url} alt={title} className="col-lg-2 d-lg-block d-none" />
           <div className={iconSrc ? 'col-lg-10 col' : 'col-lg-8 offset-lg-2 col'}>
             <div className="row d-none d-lg-flex">
               <div className="col-12 col-lg-auto">
