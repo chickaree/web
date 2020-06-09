@@ -1,9 +1,9 @@
-import { useReducer } from 'react';
-import { map } from 'rxjs/operators';
-import useReactor from '@cinematix/reactor';
+import { useReducer, useCallback, useRef, useEffect } from 'react';
+import Dexie from 'dexie';
+import { ulid } from 'ulid';
 import AppContext from '../context/app';
-import ActivityContext from '../context/activity';
 import '../styles/styles.scss';
+import { DateTime } from 'luxon';
 
 const initialState = {
   following: [],
@@ -29,31 +29,65 @@ function reducer(state, action) {
 function Chickaree({ Component, pageProps }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const subject = useReactor((value$) => (
-    value$.pipe(
-      map((activity) => {
-        if (activity.type === 'Undo') {
-          return {
-            type: 'UNFOLLOW',
-            payload: activity.object.object.href,
-          };
-        }
+  const dbRef = useRef();
 
-        return {
-          type: 'FOLLOW',
-          payload: activity.object.href,
-        };
-      }),
-    )
-  ), dispatch);
+  useEffect(() => {
+    const db = new Dexie('Chickaree');
+    db.version(1).stores({
+      activity: '++id, type, published, object.id, object.type, object.href',
+    });
+    dbRef.current = db;
+  }, []);
+
+  // Intercept a dispatch and convert it to an action to be saved in IndexedDB.
+  const dispatcher = useCallback((action) => {
+    if (!dbRef.current) {
+      throw new Error('Database not ready!');
+    }
+
+    const db = dbRef.current;
+
+    if (['FOLLOW', 'UNFOLLOW'].includes(action.type)) {
+      const id = `https://chickar.ee/activity/${ulid().toLowerCase()}`;
+      const published = DateTime.utc().toISO();
+
+      if (action.type === 'FOLLOW') {
+        db.activity.add({
+          id,
+          type: 'Follow',
+          object: {
+            type: 'Link',
+            href: action.payload,
+          },
+          published,
+        });
+      } else if (action.type === 'UNFOLLOW') {
+        db.activity
+          .where('object.href').equals(action.payload)
+          .last((follow) => (
+            db.activity.add({
+              id,
+              type: 'Undo',
+              object: {
+                id: follow.id,
+              },
+              published,
+            })
+          ));
+      }
+    }
+
+    return dispatch(action);
+  }, [
+    dbRef,
+    dispatch,
+  ]);
 
   return (
-    <ActivityContext.Provider value={subject}>
-      <AppContext.Provider value={[state, dispatch]}>
-        {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-        <Component {...pageProps} />
-      </AppContext.Provider>
-    </ActivityContext.Provider>
+    <AppContext.Provider value={[state, dispatcher]}>
+      {/* eslint-disable-next-line react/jsx-props-no-spreading */}
+      <Component {...pageProps} />
+    </AppContext.Provider>
   );
 }
 

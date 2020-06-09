@@ -14,7 +14,6 @@ import {
 } from 'rxjs/operators';
 import { DateTime } from 'luxon';
 import useReactor from '@cinematix/reactor';
-import { ulid } from 'ulid';
 import ResourceLink from '../resource-link';
 import fetchResource from '../../utils/fetch-resource';
 import Icon from '../icon';
@@ -22,7 +21,6 @@ import getResponseData from '../../utils/response/data';
 import Article from '../article';
 import getLinkHref from '../../utils/link-href';
 import Card from '../card';
-import ActivityContext from '../../context/activity';
 import AppContext from '../../context/app';
 
 function Banner({ src, alt }) {
@@ -70,8 +68,7 @@ function FeedIcon({ href, src, alt }) {
 }
 
 function FollowButton({ href }) {
-  const subject = useContext(ActivityContext);
-  const [state] = useContext(AppContext);
+  const [state, dispatch] = useContext(AppContext);
 
   const following = useMemo(() => (
     !!state.following.find((h) => h === href)
@@ -80,35 +77,15 @@ function FollowButton({ href }) {
     state.following,
   ]);
 
-  const onClick = useCallback(() => {
-    const id = `https://chickar.ee/action/${ulid().toLowerCase()}`;
-    const follow = {
-      type: 'Follow',
-      object: {
-        type: 'Link',
-        href,
-      },
-    };
-
-    let activity;
-    if (following) {
-      activity = {
-        id,
-        type: 'Undo',
-        object: follow,
-      };
-    } else {
-      activity = {
-        id,
-        ...follow,
-      };
-    }
-
-    subject.next(activity);
-  }, [
-    subject,
+  const onClick = useCallback(() => (
+    dispatch({
+      type: following ? 'UNFOLLOW' : 'FOLLOW',
+      payload: href,
+    })
+  ), [
     following,
     href,
+    dispatch,
   ]);
 
   const className = following ? 'btn-primary' : 'btn-outline-primary';
