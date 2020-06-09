@@ -1,9 +1,14 @@
-import { useReducer, useCallback, useRef, useEffect } from 'react';
+import {
+  useReducer,
+  useCallback,
+  useRef,
+  useEffect,
+} from 'react';
 import Dexie from 'dexie';
 import { ulid } from 'ulid';
+import { DateTime } from 'luxon';
 import AppContext from '../context/app';
 import '../styles/styles.scss';
-import { DateTime } from 'luxon';
 
 const initialState = {
   following: [],
