@@ -14,8 +14,32 @@ const initialState = {
   following: [],
 };
 
+async function loadFollowing(db) {
+  const activity = await db.activity.where('type').anyOf('Follow', 'Undo').toArray();
+
+  return [...activity.reduce((map, { type, id, object }) => {
+    switch (type) {
+      case 'Follow':
+        map.set(id, object.href);
+        return map;
+      case 'Undo':
+        if (map.has(object.id)) {
+          map.delete(object.id);
+        }
+        return map;
+      default:
+        return map;
+    }
+  }, new Map()).values()];
+}
+
 function reducer(state, action) {
   switch (action.type) {
+    case 'FOLLOW_MULTIPLE':
+      return {
+        ...state,
+        following: [...new Set([...state.following, ...action.payload])],
+      };
     case 'FOLLOW':
       return {
         ...state,
@@ -42,6 +66,15 @@ function Chickaree({ Component, pageProps }) {
       activity: '++id, type, published, object.id, object.type, object.href',
     });
     dbRef.current = db;
+
+    loadFollowing(db).then((payload) => {
+      if (payload.length > 0) {
+        dispatch({
+          type: 'FOLLOW_MULTIPLE',
+          payload,
+        });
+      }
+    });
   }, []);
 
   // Intercept a dispatch and convert it to an action to be saved in IndexedDB.
