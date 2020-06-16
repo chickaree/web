@@ -1,7 +1,7 @@
-import Card from "../card";
+import Card from '../card';
 import ResourceLink from '../resource-link';
 import Icon from '../icon';
-import getLinkHref from "../../utils/link-href";
+import getLinkHref from '../../utils/link-href';
 
 function Image({ href, src, alt }) {
   if (!src) {
