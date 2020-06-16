@@ -11,6 +11,7 @@ import AppContext from '../context/app';
 import '../styles/styles.scss';
 
 const initialState = {
+  status: 'init',
   following: [],
 };
 
@@ -38,6 +39,7 @@ function reducer(state, action) {
     case 'FOLLOW_MULTIPLE':
       return {
         ...state,
+        status: 'ready',
         following: [...new Set([...state.following, ...action.payload])],
       };
     case 'FOLLOW':
@@ -67,13 +69,11 @@ function Chickaree({ Component, pageProps }) {
     });
     dbRef.current = db;
 
-    loadFollowing(db).then((payload) => {
-      if (payload.length > 0) {
-        dispatch({
-          type: 'FOLLOW_MULTIPLE',
-          payload,
-        });
-      }
+    loadFollowing(db).then((feeds) => {
+      dispatch({
+        type: 'FOLLOW_MULTIPLE',
+        payload: feeds,
+      });
     });
   }, []);
 

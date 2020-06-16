@@ -14,14 +14,12 @@ import {
 } from 'rxjs/operators';
 import { DateTime } from 'luxon';
 import useReactor from '@cinematix/reactor';
-import ResourceLink from '../resource-link';
 import fetchResource from '../../utils/fetch-resource';
 import Icon from '../icon';
 import getResponseData from '../../utils/response/data';
-import Article from '../article';
 import getLinkHref from '../../utils/link-href';
-import Card from '../card';
 import AppContext from '../../context/app';
+import Item from '../card/item';
 
 function Banner({ src, alt }) {
   if (!src) {
@@ -32,38 +30,6 @@ function Banner({ src, alt }) {
     <div className="embed-responsive embed-responsive-21by9">
       <img src={src} alt={alt} className="embed-responsive-item" loading="lazy" />
     </div>
-  );
-}
-
-function FeedImage({ href, src, alt }) {
-  if (!src) {
-    return null;
-  }
-
-  return (
-    <>
-      <div className="embed-responsive embed-responsive-21by9 card-img-top">
-        <ResourceLink resource={href}>
-          <a>
-            <img src={src} alt={alt} className="embed-responsive-item" loading="lazy" />
-          </a>
-        </ResourceLink>
-      </div>
-    </>
-  );
-}
-
-function FeedIcon({ href, src, alt }) {
-  if (!src) {
-    return null;
-  }
-
-  return (
-    <ResourceLink resource={href}>
-      <a className="feed-icon d-block">
-        <Icon src={src} alt={alt} />
-      </a>
-    </ResourceLink>
   );
 }
 
@@ -96,7 +62,7 @@ function FollowButton({ href }) {
 }
 
 function CollectionIcon({
-  src, alt, href, className,
+  src, alt, href, className, follow,
 }) {
   if (!src) {
     return null;
@@ -107,7 +73,7 @@ function CollectionIcon({
       <div className="icon mb-3">
         <Icon src={src} alt={alt} />
       </div>
-      <FollowButton href={href} />
+      {follow ? <FollowButton href={href} /> : null}
     </div>
   );
 }
@@ -123,56 +89,6 @@ function Description({ description }) {
       <p>{description}</p>
     </div>
   );
-}
-
-function FeedDescription({ description }) {
-  if (!description) {
-    return null;
-  }
-
-  return (
-    <div className="card-text">{description}</div>
-  );
-}
-
-function FeedList({ feeds, icon }) {
-  if (!feeds || !feeds.length) {
-    return null;
-  }
-
-  return feeds.map((feed) => {
-    const imgSrc = getLinkHref(feed.image);
-
-    const iconSrc = getLinkHref(feed.icon) || icon;
-
-    let className = [];
-    if (imgSrc) {
-      className = [
-        ...className,
-        'has-image',
-      ];
-    }
-    return (
-      <Card key={feed.url}>
-        <div className={className.join(' ')}>
-          <FeedImage href={feed.url} src={imgSrc} alt={feed.name} />
-          <div className="card-body">
-            <div className="row">
-              <div className={iconSrc ? 'col-3 col-md-2' : ''}>
-                <FeedIcon href={feed.url} src={iconSrc} alt={feed.name} />
-              </div>
-              <div className="col">
-                <h4 className="card-title">
-                  <ResourceLink resource={feed.url}><a>{feed.name}</a></ResourceLink>
-                </h4>
-                <FeedDescription description={feed.summary} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  });
 }
 
 const initialState = {
@@ -211,13 +127,16 @@ function reducer(state, action) {
 
 function itemReactor(value$) {
   return value$.pipe(
-    switchMap(([items]) => (
-      from(items).pipe(
+    switchMap(([resource]) => (
+      from(resource.orderedItems || []).pipe(
         flatMap(({ href }, index) => (
           fetchResource(href).pipe(
             flatMap((response) => getResponseData(response)),
             flatMap((data) => of({
-              data,
+              data: {
+                ...data,
+                context: resource,
+              },
               index,
             })),
           )
@@ -243,19 +162,20 @@ function itemReactor(value$) {
 }
 
 function Collection({
-  resource: {
+  resource,
+}) {
+  const {
     url,
     name,
     attributedTo = {},
     summary,
     image,
     icon,
-    orderedItems = [],
-  },
-}) {
+  } = resource;
+
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  useReactor(itemReactor, dispatch, [orderedItems]);
+  useReactor(itemReactor, dispatch, [resource]);
 
   let className = [
     'container',
@@ -304,6 +224,17 @@ function Collection({
     })
   ), [state.items]);
 
+  let follow;
+  if (!iconSrc && entities.length > 0) {
+    follow = (
+      <div className="row mb-2 justify-content-center">
+        <div className="col-8 col-lg-6">
+          <FollowButton href={url} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <Banner src={getLinkHref(image) || getLinkHref(attributedTo.image)} alt={title} />
@@ -320,7 +251,7 @@ function Collection({
           </div>
         </div>
         <div className="row mt-3 mb-3">
-          <CollectionIcon src={iconSrc} href={url} alt={title} className="col-lg-2 d-lg-block d-none" />
+          <CollectionIcon src={iconSrc} href={url} alt={title} className="col-lg-2 d-lg-block d-none" follow={entities.length > 0} />
           <div className={iconSrc ? 'col-lg-10 col' : 'col-lg-8 offset-lg-2 col'}>
             <div className="row d-none d-lg-flex">
               <div className="col-12 col-lg-auto">
@@ -328,25 +259,14 @@ function Collection({
               </div>
               <Description description={summary} />
             </div>
+            {follow}
             <div className="row">
               <div className="collection col">
-                <FeedList feeds={feeds} icon={iconSrc} />
+                {feeds.map((feed) => (
+                  <Item key={feed.url} resource={feed} />
+                ))}
                 {entities.map((item) => (
-                  <Article
-                    key={item.url}
-                    source={url}
-                    name={item.name}
-                    published={item.published}
-                    url={item.url}
-                    summary={item.summary}
-                    image={item.image}
-                    attributedTo={{
-                      ...item.attributedTo,
-                      ...attributedTo,
-                      icon: icon || attributedTo.icon || item.attributedTo.icon,
-                      name: name || attributedTo.name || item.attributedTo.name,
-                    }}
-                  />
+                  <Item key={item.url} resource={item} />
                 ))}
               </div>
             </div>

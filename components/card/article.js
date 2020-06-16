@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon';
-import ResourceLink from './resource-link';
-import getLinkHref from '../utils/link-href';
-import Card from './card';
+import ResourceLink from '../resource-link';
+import getLinkHref from '../../utils/link-href';
+import Card from '../card';
 
 function Image({ href, src, alt }) {
   if (!src) {
@@ -67,29 +67,42 @@ function DatePublished({
 }
 
 function Article({
-  source,
   name,
   published,
   url,
   summary,
-  icon,
   image,
+  context = {},
   attributedTo = {},
 }) {
+  const {
+    url: contextUrl,
+    name: contextName,
+    icon: contextIcon,
+    attributedTo: contextAttributedTo = {},
+  } = context;
+
+  const source = contextUrl || url;
+
+  // @TODO Remove the source param and ensure context is everywhere!
   const { origin, host } = new URL(source);
+
+  const attributedName = contextName || contextAttributedTo.name || attributedTo.name;
+  const attributedIcon = contextIcon || contextAttributedTo.icon || attributedTo.icon;
+
 
   return (
     <Card>
       <div className="card-header">
         <div className="row align-items-center">
-          <Icon resource={source} src={getLinkHref(attributedTo.icon)} alt={attributedTo.name} />
-          <div className={icon ? 'col-10 col-md-11' : 'col'}>
+          <Icon resource={source} src={getLinkHref(attributedIcon)} alt={attributedName} />
+          <div className={attributedIcon ? 'col-10 col-md-11' : 'col'}>
             <div className="row align-items-center justify-content-between">
               <div className="col">
                 <h5 className="mb-0">
                   <ResourceLink resource={source}>
                     <a>
-                      {attributedTo.name}
+                      {attributedName}
                     </a>
                   </ResourceLink>
                 </h5>

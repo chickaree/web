@@ -1,13 +1,20 @@
-import { useContext, useReducer } from 'react';
+import { useContext, useReducer, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { from } from 'rxjs';
-import { switchMap, flatMap, map, bufferTime, filter } from 'rxjs/operators';
+import {
+  switchMap,
+  flatMap,
+  map,
+  bufferTime,
+  filter,
+} from 'rxjs/operators';
 import { DateTime } from 'luxon';
 import useReactor from '@cinematix/reactor';
 import AppContext from '../context/app';
 import fetchResource from '../utils/fetch-resource';
 import getResponseData from '../utils/response/data';
 import Layout from '../components/layout';
-import Article from '../components/article';
+import Item from '../components/card/item';
 
 function feedReactor(value$) {
   return value$.pipe(
@@ -76,33 +83,35 @@ function reducer(state, action) {
 }
 
 function Index() {
+  const router = useRouter();
   const [app] = useContext(AppContext);
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useReactor(feedReactor, dispatch, [app.following]);
 
+  useEffect(() => {
+    if (app.status === 'init') {
+      return;
+    }
+
+    if (app.following.length > 0) {
+      return;
+    }
+
+    router.push('/search');
+  }, [
+    app.status,
+    app.following,
+    router,
+  ]);
+
   return (
     <Layout>
       <div className="container">
         <div className="row">
-          <div className="collection mt-3 col-lg-8 offset-lg-2 col">
+          <div className="mt-3 col-lg-8 offset-lg-2 col">
             {state.items.map((item) => (
-              <Article
-                key={item.url}
-                source={item.context.url}
-                name={item.name}
-                published={item.published}
-                url={item.url}
-                summary={item.summary}
-                image={item.image}
-                // @TODO this is pulling in the wrong icon...
-                attributedTo={{
-                  ...item.attributedTo,
-                  ...item.context.attributedTo,
-                  icon: item.context.icon || item.context.attributedTo.icon || item.attributedTo.icon,
-                  name: item.context.name || item.context.attributedTo.name || item.attributedTo.name,
-                }}
-              />
+              <Item key={item.url} resource={item} />
             ))}
           </div>
         </div>
