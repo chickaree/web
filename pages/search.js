@@ -66,12 +66,12 @@ function Search() {
           <div className="mt-3 col-lg-8 offset-lg-2 col">
             <form className="mb-3">
               <div className="form-group">
-                <label htmlFor="search">Search</label>
+                <label htmlFor="q">Search</label>
                 <input
                   className="form-control form-control-lg bg-transparent text-primary"
                   type="url"
-                  name="search"
-                  id="search"
+                  name="q"
+                  id="q"
                   // eslint-disable-next-line jsx-a11y/no-autofocus
                   autoFocus
                   value={q || ''}
