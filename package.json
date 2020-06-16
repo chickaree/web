@@ -20,13 +20,15 @@
     "@cinematix/next-cloudflare": "^1.1.1",
     "@cinematix/reactor": "^2.0.0",
     "base64url": "^3.0.1",
+    "dexie": "^3.0.1",
     "jsdom": "^16.2.2",
     "jsonld": "^3.0.1",
     "luxon": "^1.23.0",
     "next": "^9.4.1",
     "react": "16.13.0",
     "react-dom": "16.13.0",
-    "rxjs": "^6.5.4"
+    "rxjs": "^6.5.5",
+    "ulid": "^2.3.0"
   },
   "devDependencies": {
     "@cloudflare/wrangler": "^1.8.4",
