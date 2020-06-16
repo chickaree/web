@@ -1,7 +1,13 @@
 import { useReducer } from 'react';
 import { useRouter } from 'next/router';
 import useReactor from '@cinematix/reactor';
-import { flatMap, switchMap, map, distinctUntilChanged, debounceTime } from 'rxjs/operators';
+import {
+  flatMap,
+  switchMap,
+  map,
+  distinctUntilChanged,
+  debounceTime,
+} from 'rxjs/operators';
 import { EMPTY } from 'rxjs';
 import Layout from '../components/layout';
 import fetchResource from '../utils/fetch-resource';
