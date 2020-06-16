@@ -82,10 +82,8 @@ function Article({
     attributedTo: contextAttributedTo = {},
   } = context;
 
-  const source = contextUrl || url;
-
-  // @TODO Remove the source param and ensure context is everywhere!
-  const { origin, host } = new URL(source);
+  const { origin, host } = new URL(url);
+  const source = contextUrl || origin;
 
   const attributedName = contextName || contextAttributedTo.name || attributedTo.name;
   const attributedIcon = contextIcon || contextAttributedTo.icon || attributedTo.icon;
