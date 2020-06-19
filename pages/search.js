@@ -1,4 +1,4 @@
-import { useReducer } from 'react';
+import { useReducer, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import useReactor from '@cinematix/reactor';
 import {
@@ -13,6 +13,7 @@ import Layout from '../components/layout';
 import fetchResource from '../utils/fetch-resource';
 import getResponseData from '../utils/response/data';
 import Item from '../components/card/item';
+import getResourceLinkData from '../utils/resource/link-data';
 
 const initialState = {
   resource: null,
@@ -59,12 +60,36 @@ function Search() {
 
   useReactor(searchReactor, dispatch, [q]);
 
+  const handleChange = useCallback(({ target }) => {
+    router.replace({
+      pathname: '/search',
+      query: { q: target.value },
+    });
+  }, [
+    router,
+  ]);
+
+  const handleSubmit = useCallback((e) => {
+    e.preventDefault();
+
+    try {
+      const url = new URL(q);
+      const { as, href } = getResourceLinkData(url);
+      router.push(href, as);
+    } catch (e) {
+      // Do nothing.
+    }
+  }, [
+    q,
+    router,
+  ]);
+
   return (
     <Layout>
       <div className="container">
         <div className="row">
           <div className="mt-3 col-lg-8 offset-lg-2 col">
-            <form className="mb-3">
+            <form className="mb-3" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label htmlFor="q">Search</label>
                 <input
@@ -72,10 +97,8 @@ function Search() {
                   type="url"
                   name="q"
                   id="q"
-                  // eslint-disable-next-line jsx-a11y/no-autofocus
-                  autoFocus
                   value={q || ''}
-                  onChange={({ target }) => router.replace({ pathname: '/search', query: { q: target.value } })}
+                  onChange={handleChange}
                 />
                 <small className="form-text text-muted">URL</small>
               </div>
