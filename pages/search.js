@@ -69,8 +69,8 @@ function Search() {
     router,
   ]);
 
-  const handleSubmit = useCallback((e) => {
-    e.preventDefault();
+  const handleSubmit = useCallback((event) => {
+    event.preventDefault();
 
     try {
       const url = new URL(q);
