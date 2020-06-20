@@ -42,14 +42,11 @@ async function getResponseData(response) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(text, mimeType);
 
-  if (doc instanceof HTMLDocument) {
+  if (mimeType === 'text/html') {
     return getResponseDataHTML(url, doc);
   }
-  if (doc instanceof XMLDocument) {
-    return getResponseDataXML(url, doc);
-  }
 
-  return null;
+  return getResponseDataXML(url, doc);
 }
 
 export default getResponseData;

@@ -8,7 +8,7 @@ async function getResponseDataXML(url, doc) {
   const text = createQueryText(doc);
 
   if (root.toLowerCase() === 'rss') {
-    const items = [...doc.querySelectorAll('item').values()];
+    const items = [...(doc.querySelectorAll('item').values())];
 
     return {
       type: 'OrderedCollection',
@@ -33,7 +33,7 @@ async function getResponseDataXML(url, doc) {
   }
 
   if (root.toLowerCase() === 'feed') {
-    const items = [...doc.querySelectorAll('entry').values()];
+    const items = [...(doc.querySelectorAll('entry').values())];
 
     return {
       type: 'OrderedCollection',
