@@ -1,58 +1,62 @@
+import { DateTime } from 'luxon';
 import createQueryText from '../query-text';
 import getImageObj from '../image-obj';
-
-function createQueryAllText(doc) {
-  return (querySelector) => {
-    const nodes = doc.querySelectorAll(querySelector);
-    return [...nodes.values()].map((n) => n.textContent);
-  };
-}
-
-function createQueryAllAttribute(doc) {
-  return (querySelector, attribute) => {
-    const nodes = doc.querySelectorAll(querySelector);
-    return [...nodes.values()].filter(
-      (n) => !!n.hasAttribute(attribute),
-    ).map(
-      (n) => n.getAttribute(attribute),
-    );
-  };
-}
+import createQueryAttribute from '../query-attr';
 
 async function getResponseDataXML(url, doc) {
   const root = doc.documentElement.tagName;
-
   const text = createQueryText(doc);
-  const textList = createQueryAllText(doc);
-  const attributeList = createQueryAllAttribute(doc);
 
   if (root.toLowerCase() === 'rss') {
+    const items = [...doc.querySelectorAll('item').values()];
+
     return {
       type: 'OrderedCollection',
       name: text('channel > title'),
       url: url.toString(),
       icon: getImageObj(text('channel > image > url'), url),
       summary: text('channel > description'),
-      // @TODO handle embeded objects.
-      orderedItems: textList('item > link').map((href) => ({
-        type: 'Link',
-        href,
-      })),
+      orderedItems: items.map((el) => {
+        const itemText = createQueryText(el);
+
+        const pubDate = itemText('pubDate');
+
+        return {
+          type: 'Object',
+          name: itemText('title'),
+          published: pubDate ? DateTime.fromRFC2822(pubDate).toUTC().toISO() : undefined,
+          url: itemText('link'),
+          summary: itemText('description'),
+        };
+      }),
     };
   }
 
   if (root.toLowerCase() === 'feed') {
+    const items = [...doc.querySelectorAll('entry').values()];
+
     return {
       type: 'OrderedCollection',
       name: text(':root > title'),
       url: url.toString(),
       icon: getImageObj(text(':root > icon'), url),
       summary: text(':root > description') || text(':root > subtitle'),
-      // @TODO handle embeded objects.
-      orderedItems: attributeList('entry > link', 'href').map((href) => ({
-        type: 'Link',
-        href,
-      })),
+      orderedItems: items.map((el) => {
+        const itemText = createQueryText(el);
+        const itemAttribute = createQueryAttribute(el);
+
+        const published = itemText('published');
+        const updated = itemText('updated');
+
+        return {
+          type: 'Object',
+          name: itemText('title'),
+          published: published ? DateTime.fromISO(published).toUTC().toISO() : undefined,
+          updated: updated ? DateTime.fromISO(updated).toUTC().toISO() : undefined,
+          url: itemAttribute('link', 'href'),
+          summary: itemText('summary'),
+        };
+      }),
     };
   }
 

@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import getImageObj from '../image-obj';
 
 async function getResponseDataJson(url, data) {
@@ -7,10 +8,21 @@ async function getResponseDataJson(url, data) {
     name: data.title || '',
     icon: getImageObj(data.icon, url),
     summary: data.description || '',
-    // @TODO handle embeded objects.
-    orderedItems: (data.items || []).map((item) => ({
-      type: 'Link',
-      href: item.url,
+    orderedItems: (data.items || []).map(({
+      title,
+      url: href,
+      image,
+      date_published: published,
+      date_modified: modified,
+      summary,
+    }) => ({
+      type: 'Object',
+      name: title,
+      url: href,
+      image: getImageObj(image, url),
+      published: published ? DateTime.fromISO(published).toUTC().toISO() : undefined,
+      updated: modified ? DateTime.fromISO(modified).toUTC().toISO() : undefined,
+      summary,
     })),
   };
 }

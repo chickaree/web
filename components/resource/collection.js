@@ -127,13 +127,14 @@ function reducer(state, action) {
 
 function itemReactor(value$) {
   return value$.pipe(
-    switchMap(([resource]) => (
-      from(resource.orderedItems || []).pipe(
-        flatMap(({ href }, index) => (
-          fetchResource(href).pipe(
+    switchMap(([{ orderedItems, ...resource }]) => (
+      from(orderedItems || []).pipe(
+        flatMap((item, index) => (
+          fetchResource(item.url).pipe(
             flatMap((response) => getResponseData(response)),
             flatMap((data) => of({
               data: {
+                ...item,
                 ...data,
                 context: resource,
               },

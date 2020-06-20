@@ -22,12 +22,15 @@ function feedReactor(value$) {
     switchMap((feeds) => from(feeds)),
     flatMap((feed) => fetchResource(feed)),
     flatMap((response) => getResponseData(response)),
-    flatMap((context) => (
-      from(context.orderedItems).pipe(
-        flatMap(({ href }) => fetchResource(href)),
-        flatMap((response) => getResponseData(response)),
-        filter((item) => item.type !== 'OrderedCollection'),
-        map((item) => ({ ...item, context })),
+    flatMap(({ orderedItems, ...context }) => (
+      from(orderedItems).pipe(
+        flatMap((item) => (
+          fetchResource(item.url).pipe(
+            flatMap((response) => getResponseData(response)),
+            filter(({ type }) => type !== 'OrderedCollection'),
+            map((data) => ({ ...item, ...data, context })),
+          )
+        )),
       )
     )),
     // Group by tick.

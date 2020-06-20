@@ -1,17 +1,11 @@
 import { DateTime } from 'luxon';
 import createQueryText from '../query-text';
+import createQueryAttribute from '../query-attr';
 import jsonldFrame from '../jsonld-frame';
 import toArray from '../to-array';
 import { Article, WebPage, ItemList } from '../../tree/schema';
 import getImageObj from '../image-obj';
 // import fetchResource from '../fetch-resource';
-
-function createAttribute(doc) {
-  return (querySelector, attribute) => {
-    const element = doc.querySelector(querySelector);
-    return element && element.hasAttribute(attribute) ? element.getAttribute(attribute) : null;
-  };
-}
 
 function intersection(a, b) {
   return a.filter((x) => b.includes(x));
@@ -77,7 +71,7 @@ function getBestImages(data, ratio) {
 
 async function getResponseDataHTML(url, doc) {
   const head = doc.querySelector('head');
-  const attribute = createAttribute(head);
+  const attribute = createQueryAttribute(head);
   const text = createQueryText(head);
 
   const obj = {
@@ -179,17 +173,18 @@ async function getResponseDataHTML(url, doc) {
         mainCreativeWork = data;
         if (data.mainEntity) {
           obj.orderedItems = toArray(data.mainEntity.itemListElement || []).map((item) => ({
-            type: 'Link',
-            href: item.url,
+            type: 'Object',
+            url: item.url,
           }));
         }
       }
 
       if (intersection(toArray(data.type), ItemList).length) {
         obj.type = 'OrderedCollection';
+        // @TODO handle embeded items?
         obj.orderedItems = toArray(data.itemListElement || []).map((item) => ({
-          type: 'Link',
-          href: item.url,
+          type: 'Object',
+          url: item.url,
         }));
         if (data.mainEntityOfPage) {
           mainCreativeWork = data.mainEntityOfPage;
@@ -366,9 +361,9 @@ async function getResponseDataHTML(url, doc) {
       }, [])
       .sort((a, b) => a.order - b.order)
       .map(({ link }) => ({
-        type: 'Link',
+        type: 'Object',
         name: link.getAttribute('title'),
-        href: (new URL(link.getAttribute('href'), url)).toString(),
+        url: (new URL(link.getAttribute('href'), url)).toString(),
       }));
 
     if (feeds.length > 0) {
