@@ -69,6 +69,7 @@ function DatePublished({
 function Article({
   name,
   published,
+  updated,
   url,
   summary,
   image,
@@ -87,7 +88,6 @@ function Article({
 
   const attributedName = contextName || contextAttributedTo.name || attributedTo.name;
   const attributedIcon = contextIcon || contextAttributedTo.icon || attributedTo.icon;
-
 
   return (
     <Card>
@@ -110,7 +110,7 @@ function Article({
                   </ResourceLink>
                 </h6>
               </div>
-              <DatePublished datetime={published} href={url} />
+              <DatePublished datetime={published || updated} href={url} />
             </div>
           </div>
         </div>

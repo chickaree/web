@@ -3,6 +3,14 @@ import createQueryText from '../query-text';
 import getImageObj from '../image-obj';
 import createQueryAttribute from '../query-attr';
 
+class XMLTypeError extends Error {
+  constructor(url, document) {
+    super('Unkown XML Type');
+    this.url = url;
+    this.document = document;
+  }
+}
+
 async function getResponseDataXML(url, doc) {
   const root = doc.documentElement.tagName;
   const text = createQueryText(doc);
@@ -60,7 +68,7 @@ async function getResponseDataXML(url, doc) {
     };
   }
 
-  throw new Error('Unkown XML Type');
+  throw new XMLTypeError(url, doc);
 }
 
 export default getResponseDataXML;

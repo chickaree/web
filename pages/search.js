@@ -75,7 +75,7 @@ function searchReactor(value$) {
           flatMap((response) => getResponseData(response)),
           map((resource) => ({
             type: RESOURCES_SET,
-            payload: [resource],
+            payload: resource ? [resource] : [],
           })),
         );
       } catch (error) {

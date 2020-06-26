@@ -68,11 +68,13 @@ function reducer(state, action) {
 
           return acc;
         }, new Map()).values()].sort((a, b) => {
-          const aDateTime = a.published
-            ? DateTime.fromISO(a.published)
+          const aPublished = a.published || a.updated;
+          const aDateTime = aPublished
+            ? DateTime.fromISO(aPublished)
             : DateTime.fromMillis(0);
-          const bDateTime = b.published
-            ? DateTime.fromISO(b.published)
+          const bPublished = b.published || b.updated;
+          const bDateTime = bPublished
+            ? DateTime.fromISO(bPublished)
             : DateTime.fromMillis(0);
 
           return bDateTime.diff(aDateTime);
