@@ -53,12 +53,19 @@ function DatePublished({
     return null;
   }
 
+  const dt = DateTime.fromISO(datetime);
+
+  let format = DateTime.DATETIME_SHORT;
+  if (dt.toLocal().startOf('day').equals(DateTime.local().startOf('day'))) {
+    format = DateTime.TIME_SIMPLE;
+  }
+
   return (
     <div className="col text-right">
       <time dateTime={datetime} className="small">
         <ResourceLink resource={href}>
           <a>
-            {DateTime.fromISO(datetime).toLocaleString(DateTime.DATETIME_SHORT)}
+            {dt.toLocaleString(format)}
           </a>
         </ResourceLink>
       </time>
