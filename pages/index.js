@@ -103,7 +103,7 @@ function Index() {
       return;
     }
 
-    router.push('/search');
+    router.replace('/search');
   }, [
     app.status,
     app.following,
