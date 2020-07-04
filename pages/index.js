@@ -1,4 +1,4 @@
-import { useContext, useReducer, useEffect } from 'react';
+import { useContext, useReducer, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { from } from 'rxjs';
 import {
@@ -55,6 +55,12 @@ const initialState = {
   items: [],
 };
 
+function getPublishedDateTime(item) {
+  const published = item.published || item.updated;
+
+  return published ? DateTime.fromISO(published) : DateTime.fromMillis(0);
+}
+
 function reducer(state, action) {
   switch (action.type) {
     case 'ITEMS_ADD':
@@ -68,14 +74,8 @@ function reducer(state, action) {
 
           return acc;
         }, new Map()).values()].sort((a, b) => {
-          const aPublished = a.published || a.updated;
-          const aDateTime = aPublished
-            ? DateTime.fromISO(aPublished)
-            : DateTime.fromMillis(0);
-          const bPublished = b.published || b.updated;
-          const bDateTime = bPublished
-            ? DateTime.fromISO(bPublished)
-            : DateTime.fromMillis(0);
+          const aDateTime = getPublishedDateTime(a);
+          const bDateTime = getPublishedDateTime(b);
 
           return bDateTime.diff(aDateTime);
         }),
@@ -110,12 +110,28 @@ function Index() {
     router,
   ]);
 
+
+  const items = useMemo(() => {
+    // @TODO Keep "today" in state.
+    const now = DateTime.local();
+
+    // Only show items that are in the past
+    // @TODO add some sort of setInterval to re-render when those items are past now.
+    return state.items.filter((item) => {
+      const published = getPublishedDateTime(item);
+
+      return published < now;
+    });
+  }, [
+    state.items,
+  ]);
+
   return (
     <Layout>
       <div className="container">
         <div className="row">
           <div className="mt-3 col-lg-8 offset-lg-2 col">
-            {state.items.map((item) => (
+            {items.map((item) => (
               <Item key={item.url} resource={item} />
             ))}
           </div>
