@@ -20,6 +20,7 @@ import fetchResource from '../utils/fetch-resource';
 import getResponseData from '../utils/response/data';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
+import useHomeEnabled from '../hooks/home-enabled';
 
 function feedReactor(value$) {
   return value$.pipe(
@@ -95,23 +96,19 @@ function reducer(state, action) {
 function Index() {
   const router = useRouter();
   const [app] = useContext(AppContext);
+  const isHomeEnabled = useHomeEnabled();
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useReactor(feedReactor, dispatch, [app.following]);
 
   useEffect(() => {
-    if (app.status === 'init') {
-      return;
-    }
-
-    if (app.following.length > 0) {
+    if (isHomeEnabled) {
       return;
     }
 
     router.replace('/search');
   }, [
-    app.status,
-    app.following,
+    isHomeEnabled,
     router,
   ]);
 
