@@ -12,12 +12,12 @@ import useHomeEnabled from '../hooks/home-enabled';
 
 const MENU_TOGGLE = 'MENU_TOGGLE';
 const MENU_TRANSITION_COMPLETE = 'MENU_TRANSITION_COMPLETE';
+const NAVIGATION = 'NAVIGATION';
 
 const STATUS_OPEN = 'open';
 const STATUS_CLOSED = 'closed';
 const STATUS_OPENING = 'opening';
 const STATUS_CLOSING = 'closing';
-const NAVIGATION = 'NAVIGATION';
 
 const initialState = {
   status: STATUS_CLOSED,
