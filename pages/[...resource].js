@@ -5,7 +5,9 @@ import useReactor from '@cinematix/reactor';
 import {
   of, concat, EMPTY, from,
 } from 'rxjs';
-import { switchMap, filter, flatMap } from 'rxjs/operators';
+import {
+  switchMap, filter, flatMap, map,
+} from 'rxjs/operators';
 import getResourceLinkData from '../utils/resource/link-data';
 import fetchResource from '../utils/fetch-resource';
 import getResponseUrl from '../utils/response-url';
@@ -67,6 +69,7 @@ function resourceReactor(value$) {
       return concat(
         of(init),
         fetchResource(resource).pipe(
+          filter((response) => !!response.ok),
           flatMap((response) => {
             const url = getResponseUrl(response);
 
@@ -78,16 +81,11 @@ function resourceReactor(value$) {
               });
             }
 
-            if (!response.headers.has('Content-Type')) {
-              // @TODO Throw some sort of error.
-              return EMPTY;
-            }
-
             // @TODO Redirect based on the Caonical and
             //       get the manifest data.
 
             return from(getResponseData(response)).pipe(
-              flatMap((payload) => of({
+              map((payload) => ({
                 type: 'RESOURCE_SET',
                 payload,
               })),

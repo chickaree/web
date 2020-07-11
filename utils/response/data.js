@@ -13,9 +13,16 @@ export const MIME_TYPES = [
   'application/xhtml+xml',
 ];
 
+class ResponseError extends Error {
+  constructor(response, message) {
+    super(`${message} for resource at ${getResponseUrl(response)}`);
+    this.response = response;
+  }
+}
+
 async function getResponseData(response) {
   if (!response.headers.has('Content-Type')) {
-    return null;
+    throw new ResponseError(response, 'Missing Content-Type header');
   }
 
   // @TODO Get data from Link headers
@@ -23,7 +30,7 @@ async function getResponseData(response) {
   let mimeType = response.headers.get('Content-Type').split(';').shift().trim();
 
   if (!MIME_TYPES.includes(mimeType)) {
-    return null;
+    throw new ResponseError(response, 'Unsupported mime-type');
   }
 
   const url = getResponseUrl(response);

@@ -4,7 +4,7 @@ import {
   useContext,
   useCallback,
 } from 'react';
-import { from, of } from 'rxjs';
+import { from } from 'rxjs';
 import {
   switchMap,
   flatMap,
@@ -133,8 +133,9 @@ function itemReactor(value$) {
       from(orderedItems || []).pipe(
         flatMap((item, index) => (
           fetchResource(item.url).pipe(
+            filter((response) => !!response.ok),
             flatMap((response) => getResponseData(response)),
-            flatMap((data) => of({
+            map((data) => ({
               data: {
                 ...item,
                 ...data,
