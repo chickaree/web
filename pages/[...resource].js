@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { decode } from 'base64url';
 import useReactor from '@cinematix/reactor';
 import {
-  of, concat, EMPTY, from,
+  of, concat, from,
 } from 'rxjs';
 import {
   switchMap, filter, flatMap, map,
