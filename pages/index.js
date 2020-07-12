@@ -27,11 +27,13 @@ function feedReactor(value$) {
     map(([feeds]) => feeds),
     switchMap((feeds) => from(feeds)),
     flatMap((feed) => fetchResource(feed)),
+    filter((response) => !!response.ok),
     flatMap((response) => getResponseData(response)),
     flatMap(({ orderedItems, ...context }) => (
-      from(orderedItems).pipe(
+      from(orderedItems || []).pipe(
         flatMap((item) => (
           fetchResource(item.url).pipe(
+            filter((response) => !!response.ok),
             flatMap((response) => getResponseData(response)),
             filter(({ type }) => type !== 'OrderedCollection'),
             map((data) => ({ ...item, ...data, context })),
