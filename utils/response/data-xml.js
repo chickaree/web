@@ -28,12 +28,13 @@ async function getResponseDataXML(url, doc) {
         const itemText = createQueryText(el);
 
         const pubDate = itemText('pubDate');
+        const link = itemText('link');
 
         return {
           type: 'Object',
           name: itemText('title'),
           published: pubDate ? DateTime.fromRFC2822(pubDate).toUTC().toISO() : undefined,
-          url: itemText('link'),
+          url: link ? (new URL(link, url)).toString() : undefined,
           summary: itemText('description'),
         };
       }),
@@ -55,13 +56,14 @@ async function getResponseDataXML(url, doc) {
 
         const published = itemText('published');
         const updated = itemText('updated');
+        const link = itemAttribute('link', 'href');
 
         return {
           type: 'Object',
           name: itemText('title'),
           published: published ? DateTime.fromISO(published).toUTC().toISO() : undefined,
           updated: updated ? DateTime.fromISO(updated).toUTC().toISO() : undefined,
-          url: itemAttribute('link', 'href'),
+          url: link ? (new URL(link, url)).toString() : undefined,
           summary: itemText('summary'),
         };
       }),
