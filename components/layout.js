@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/router';
 import useHomeEnabled from '../hooks/home-enabled';
+import BackButton from './back-button';
 
 const MENU_TOGGLE = 'MENU_TOGGLE';
 const MENU_TRANSITION_COMPLETE = 'MENU_TRANSITION_COMPLETE';
@@ -100,7 +101,10 @@ function NavLink({
   );
 }
 
-const Layout = ({ children }) => {
+const Layout = ({
+  backButton = false,
+  children,
+}) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const router = useRouter();
   const isHomeEnabled = useHomeEnabled();
@@ -117,7 +121,7 @@ const Layout = ({ children }) => {
     });
   }, []);
 
-  const handleClick = useCallback(() => {
+  const handleMenuClick = useCallback(() => {
     dispatch({
       type: MENU_TOGGLE,
       payload: window.scrollY,
@@ -180,10 +184,10 @@ const Layout = ({ children }) => {
 
   const menuButtonClassName = useMemo(() => {
     if ([STATUS_OPEN, STATUS_OPENING].includes(state.status)) {
-      return 'btn btn-link active';
+      return 'btn btn-link pl-0 pr-0 active';
     }
 
-    return 'btn btn-link';
+    return 'btn btn-link pl-0 pr-0';
   }, [
     state.status,
   ]);
@@ -257,7 +261,10 @@ const Layout = ({ children }) => {
           <header style={styles}>
             <div className="container-fluid">
               <div className="row pt-1 pb-1">
-                <div className="col-8 offset-2 text-center">
+                <div className="col-2">
+                  <BackButton disabled={!backButton} />
+                </div>
+                <div className="col-8 text-center">
                   <Link href="/">
                     <a>
                       <img src="/img/icon.svg" alt="chickar.ee" />
@@ -265,7 +272,7 @@ const Layout = ({ children }) => {
                   </Link>
                 </div>
                 <div className="col-2 text-right">
-                  <button type="button" className={menuButtonClassName} title={menuButtonTitle} onClick={handleClick} aria-pressed={[STATUS_OPENING, STATUS_OPEN].includes(state.status) ? true : undefined}>
+                  <button type="button" className={menuButtonClassName} title={menuButtonTitle} onClick={handleMenuClick} aria-pressed={[STATUS_OPENING, STATUS_OPEN].includes(state.status) ? true : undefined}>
                     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
                       <path d="M0 0h24v24H0z" fill="none" />
                       <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
@@ -277,7 +284,7 @@ const Layout = ({ children }) => {
           </header>
           {/* eslint-disable-next-line max-len */}
           {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions,jsx-a11y/click-events-have-key-events */}
-          <main className="content pt-5" onClick={[STATUS_OPEN, STATUS_OPENING].includes(state.status) ? handleClick : undefined}>
+          <main className="content pt-5" onClick={[STATUS_OPEN, STATUS_OPENING].includes(state.status) ? handleMenuClick : undefined}>
             <div className="event-container">
               {children}
             </div>

@@ -138,7 +138,7 @@ function Resource() {
   ]);
 
   return (
-    <Layout>
+    <Layout backButton>
       {meta}
       {content}
     </Layout>
