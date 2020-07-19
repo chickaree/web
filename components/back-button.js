@@ -1,4 +1,6 @@
-import { useEffect, useReducer, useMemo, useCallback } from 'react';
+import {
+  useEffect, useReducer, useMemo, useCallback,
+} from 'react';
 import { useRouter } from 'next/router';
 
 const HISTORY_LENGTH = 'HISTORY_LENGTH';
