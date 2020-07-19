@@ -149,6 +149,20 @@ const Layout = ({
   ]);
 
   useEffect(() => {
+    if (state.status !== STATUS_OPENING) {
+      return;
+    }
+
+    // When the menu is opening, prefetch the nav links.
+    // We have to do this manually because IntersectionObserver does not work with transform.
+    router.prefetch('/');
+    router.prefetch('/search');
+  }, [
+    router,
+    state.status,
+  ]);
+
+  useEffect(() => {
     if (state.status !== STATUS_CLOSED || state.navigate === '') {
       return;
     }
