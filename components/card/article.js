@@ -140,10 +140,10 @@ function Article({
           </div>
         </div>
       </div>
-      <Image href={url} src={getLinkHref(image)} alt={name} />
+      <Image href={url.href} src={getLinkHref(image)} alt={name} />
       <div className="card-body">
         <h4 className="card-title">
-          <a href={url}>{name}</a>
+          <a href={url.href}>{name}</a>
         </h4>
         <Description text={summary} />
       </div>
