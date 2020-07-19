@@ -3,11 +3,16 @@ import getResponseDataHTML from './data-html';
 import getResponseDataXML from './data-xml';
 import getResponseUrl from '../response-url';
 import MIME_TYPES from '../mime-types';
+import getMimeType from '../mime-type';
 
 async function getResponseData(response) {
   const url = getResponseUrl(response);
 
-  if (!response.headers.has('Content-Type')) {
+  // @TODO Get data from Link headers
+
+  let mimeType = getMimeType(response);
+
+  if (mimeType === '') {
     return {
       type: 'Object',
       url: {
@@ -16,10 +21,6 @@ async function getResponseData(response) {
       },
     };
   }
-
-  // @TODO Get data from Link headers
-
-  let mimeType = response.headers.get('Content-Type').split(';').shift().trim();
 
   if (!MIME_TYPES.includes(mimeType)) {
     return {
