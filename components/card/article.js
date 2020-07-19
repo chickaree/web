@@ -1,7 +1,9 @@
 import { DateTime } from 'luxon';
+import DOMPurify from 'dompurify';
 import ResourceLink from '../resource-link';
 import getLinkHref from '../../utils/link-href';
 import Card from '../card';
+import MIME_TYPES from '../../utils/mime-types';
 
 function Image({ href, src, alt }) {
   if (!src) {
@@ -22,7 +24,14 @@ function Description({ text }) {
     return null;
   }
 
-  return <p className="card-text">{text}</p>;
+  const html = DOMPurify.sanitize(text, { ALLOWED_TAGS: ['strong', 'em'] });
+
+  if (!html) {
+    return null;
+  }
+
+  // eslint-disable-next-line react/no-danger
+  return <p className="card-text" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 function Icon({
@@ -47,7 +56,7 @@ function Icon({
 
 function DatePublished({
   datetime,
-  href,
+  link,
 }) {
   if (!datetime) {
     return null;
@@ -60,14 +69,23 @@ function DatePublished({
     format = DateTime.TIME_SIMPLE;
   }
 
+  let time = dt.toLocaleString(format);
+
+  // If the resource can be handled provide a permalink.
+  if (link && link.mediaType && MIME_TYPES.includes(link.mediaType)) {
+    time = (
+      <ResourceLink resource={link.href}>
+        <a>
+          {time}
+        </a>
+      </ResourceLink>
+    );
+  }
+
   return (
     <div className="col text-right">
       <time dateTime={datetime} className="small">
-        <ResourceLink resource={href}>
-          <a>
-            {dt.toLocaleString(format)}
-          </a>
-        </ResourceLink>
+        {time}
       </time>
     </div>
   );
@@ -77,21 +95,21 @@ function Article({
   name,
   published,
   updated,
-  url,
+  url = {},
   summary,
   image,
   context = {},
   attributedTo = {},
 }) {
   const {
-    url: contextUrl,
+    url: contextUrl = {},
     name: contextName,
     icon: contextIcon,
     attributedTo: contextAttributedTo = {},
   } = context;
 
-  const { origin, host } = new URL(url);
-  const source = contextUrl || origin;
+  const { origin, host } = new URL(url.href);
+  const source = contextUrl.href || origin;
 
   const attributedName = contextName || contextAttributedTo.name || attributedTo.name;
   const attributedIcon = contextIcon || contextAttributedTo.icon || attributedTo.icon;
@@ -117,7 +135,7 @@ function Article({
                   </ResourceLink>
                 </h6>
               </div>
-              <DatePublished datetime={published || updated} href={url} />
+              <DatePublished datetime={published || updated} link={url} />
             </div>
           </div>
         </div>

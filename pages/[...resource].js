@@ -84,6 +84,8 @@ function resourceReactor(value$) {
             // @TODO Redirect based on the Caonical and
             //       get the manifest data.
 
+            // @TODO handle the an error thrown by getResponseData().
+
             return from(getResponseData(response)).pipe(
               map((payload) => ({
                 type: 'RESOURCE_SET',

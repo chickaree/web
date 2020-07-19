@@ -16,6 +16,7 @@ import { fromFetch } from 'rxjs/fetch';
 import Layout from '../components/layout';
 import fetchResource from '../utils/fetch-resource';
 import getResponseData from '../utils/response/data';
+import MIME_TYPES from '../utils/mime-types';
 import Item from '../components/card/item';
 import getResourceLinkData from '../utils/resource/link-data';
 
@@ -36,7 +37,7 @@ function reducer(state, action) {
     case RESOURCES_ADD: {
       // Merge and remove any duplicates.
       const resources = [...[...state.resources, ...action.payload].reduce((acc, resource) => {
-        acc.set(resource.url, resource);
+        acc.set(resource.url.href, resource);
         return acc;
       }, new Map()).values()].sort((a, b) => a.position - b.position);
 
@@ -254,10 +255,13 @@ function Search() {
   const { collections, items } = useMemo(() => (
     state.resources.reduce((acc, resource) => {
       if (resource.type === 'OrderedCollection') {
-        acc.collections = [
-          ...acc.collections,
-          resource,
-        ];
+        // Exclude collections that cannot be handled.
+        if (MIME_TYPES.includes(resource.url.mediaType)) {
+          acc.collections = [
+            ...acc.collections,
+            resource,
+          ];
+        }
       } else {
         acc.items = [
           ...acc.items,
@@ -292,10 +296,10 @@ function Search() {
               </div>
             </form>
             {collections.map((item) => (
-              <Item key={item.url} resource={item} />
+              <Item key={item.url.href} resource={item} />
             ))}
             {items.map((item) => (
-              <Item key={item.url} resource={item} />
+              <Item key={item.url.href} resource={item} />
             ))}
           </div>
         </div>

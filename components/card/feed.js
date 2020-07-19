@@ -68,15 +68,15 @@ function Feed({
   return (
     <Card>
       <div className={className.join(' ')}>
-        <Image href={url} src={imgSrc} alt={name} />
+        <Image href={url.href} src={imgSrc} alt={name} />
         <div className="card-body">
           <div className="row">
             <div className={iconSrc ? 'col-3 col-md-2' : ''}>
-              <FeedIcon href={url} src={iconSrc} alt={name} />
+              <FeedIcon href={url.href} src={iconSrc} alt={name} />
             </div>
             <div className="col">
               <h4 className="card-title">
-                <ResourceLink resource={url}><a>{name}</a></ResourceLink>
+                <ResourceLink resource={url.href}><a>{name}</a></ResourceLink>
               </h4>
               <Description description={summary} />
             </div>

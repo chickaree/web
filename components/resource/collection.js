@@ -17,6 +17,7 @@ import useReactor from '@cinematix/reactor';
 import fetchResource from '../../utils/fetch-resource';
 import Icon from '../icon';
 import getResponseData from '../../utils/response/data';
+import MIME_TYPES from '../../utils/mime-types';
 import getLinkHref from '../../utils/link-href';
 import AppContext from '../../context/app';
 import Item from '../card/item';
@@ -104,7 +105,7 @@ function reducer(state, action) {
           ...state.items,
           ...action.payload,
         ].reduce((acc, item) => {
-          acc.set(item.data.url, item);
+          acc.set(item.data.url.href, item);
 
           return acc;
         }, new Map()).values()].sort((a, b) => a.index - b.index).sort((a, b) => {
@@ -132,7 +133,7 @@ function itemReactor(value$) {
     switchMap(([{ orderedItems, ...resource }]) => (
       from(orderedItems || []).pipe(
         flatMap((item, index) => (
-          fetchResource(item.url).pipe(
+          fetchResource(item.url.href).pipe(
             filter((response) => !!response.ok),
             flatMap((response) => getResponseData(response)),
             map((data) => ({
@@ -155,7 +156,7 @@ function itemReactor(value$) {
               return acc;
             }
 
-            acc.set(item.data.url, item);
+            acc.set(item.data.url.href, item);
 
             return acc;
           }, new Map()).values()],
@@ -169,7 +170,7 @@ function Collection({
   resource,
 }) {
   const {
-    url,
+    url = {},
     name,
     attributedTo = {},
     summary,
@@ -206,6 +207,11 @@ function Collection({
   const { feeds, entities } = useMemo(() => (
     state.items.reduce((acc, { data }) => {
       if (data.type === 'OrderedCollection') {
+        // Exclude feeds that are not a mediaType that we can handle.
+        if (!MIME_TYPES.includes(data.url.mediaType)) {
+          return acc;
+        }
+
         return {
           ...acc,
           feeds: [
@@ -233,7 +239,7 @@ function Collection({
     follow = (
       <div className="row mb-2 justify-content-center">
         <div className="col-8 col-lg-6">
-          <FollowButton href={url} />
+          <FollowButton href={url.href} />
         </div>
       </div>
     );
@@ -244,7 +250,7 @@ function Collection({
       <Banner src={getLinkHref(image) || getLinkHref(attributedTo.image)} alt={title} />
       <div className={className.join(' ')}>
         <div className="row mt-3 mb-3 d-flex d-lg-none">
-          <CollectionIcon src={iconSrc} href={url} alt={title} className="col-4" />
+          <CollectionIcon src={iconSrc} href={url.href} alt={title} className="col-4" />
           <div className={iconSrc ? 'col' : 'col-lg-8 offset-lg-2 col'}>
             <div className="row">
               <div className="col-12 col-lg-auto">
@@ -255,7 +261,7 @@ function Collection({
           </div>
         </div>
         <div className="row mt-3 mb-3">
-          <CollectionIcon src={iconSrc} href={url} alt={title} className="col-lg-2 d-lg-block d-none" follow={entities.length > 0} />
+          <CollectionIcon src={iconSrc} href={url.href} alt={title} className="col-lg-2 d-lg-block d-none" follow={entities.length > 0} />
           <div className={iconSrc ? 'col-lg-10 col' : 'col-lg-8 offset-lg-2 col'}>
             <div className="row d-none d-lg-flex">
               <div className="col-12 col-lg-auto">
@@ -267,10 +273,10 @@ function Collection({
             <div className="row">
               <div className="collection col">
                 {feeds.map((feed) => (
-                  <Item key={feed.url} resource={feed} />
+                  <Item key={feed.url.href} resource={feed} />
                 ))}
                 {entities.map((item) => (
-                  <Item key={item.url} resource={item} />
+                  <Item key={item.url.href} resource={item} />
                 ))}
               </div>
             </div>

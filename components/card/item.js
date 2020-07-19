@@ -14,6 +14,7 @@ function Item({
       return (
         <Feed {...resource} />
       );
+    case 'Object':
     case 'Article': {
       return (
         <Article {...resource} />

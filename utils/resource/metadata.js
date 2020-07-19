@@ -22,7 +22,7 @@ function getResourceMetadata(resource) {
   };
   let title;
 
-  if (!resource || !resource.url) {
+  if (!resource || !resource.url || !resource.url.href) {
     return {
       og,
       schema,
@@ -30,7 +30,7 @@ function getResourceMetadata(resource) {
     };
   }
 
-  const url = new URL(getResourceLinkData(resource.url).as, URL_BASE);
+  const url = new URL(getResourceLinkData(resource.url.href).as, URL_BASE);
   schema.url = url.toString();
   og.url = url.toString();
 
@@ -71,16 +71,16 @@ function getResourceMetadata(resource) {
         schema.mainEntity = {
           '@id': url.toString(),
           '@type': 'ItemList',
-          sameAs: resource.url,
+          sameAs: resource.url.href,
           datePublished: schema.datePublished,
-          itemListElement: (resource.orderedItems || []).map(({ url: href }) => {
-            const itemURL = new URL(getResourceLinkData(href).as, URL_BASE);
+          itemListElement: (resource.orderedItems || []).map(({ url: itemurl }) => {
+            const itemURL = new URL(getResourceLinkData(itemurl.href).as, URL_BASE);
 
             return {
               '@id': itemURL.toString(),
               '@type': 'Thing',
               url: itemURL.toString(),
-              sameAs: href,
+              sameAs: itemurl.href,
             };
           }),
         };
@@ -103,13 +103,13 @@ function getResourceMetadata(resource) {
             title: schema.title,
             description: schema.description,
             image: schema.image,
-            url: resource.url,
+            url: resource.url.href,
             datePublished: schema.datePublished,
           },
         };
 
         if (resource.attributedTo) {
-          const { origin } = new URL(resource.url);
+          const { origin } = new URL(resource.url.href);
           const originURL = new URL(getResourceLinkData(origin).as, URL_BASE);
 
           schema.mainEntity.author = {

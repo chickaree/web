@@ -2,27 +2,19 @@ import getResponseDataJson from './data-json';
 import getResponseDataHTML from './data-html';
 import getResponseDataXML from './data-xml';
 import getResponseUrl from '../response-url';
-
-export const MIME_TYPES = [
-  'application/json',
-  'application/rss+xml',
-  'application/atom+xml',
-  'text/html',
-  'text/xml',
-  'application/xml',
-  'application/xhtml+xml',
-];
-
-class ResponseError extends Error {
-  constructor(response, message) {
-    super(`${message} for resource at ${getResponseUrl(response)}`);
-    this.response = response;
-  }
-}
+import MIME_TYPES from '../mime-types';
 
 async function getResponseData(response) {
+  const url = getResponseUrl(response);
+
   if (!response.headers.has('Content-Type')) {
-    throw new ResponseError(response, 'Missing Content-Type header');
+    return {
+      type: 'Object',
+      url: {
+        type: 'Link',
+        href: url,
+      },
+    };
   }
 
   // @TODO Get data from Link headers
@@ -30,10 +22,15 @@ async function getResponseData(response) {
   let mimeType = response.headers.get('Content-Type').split(';').shift().trim();
 
   if (!MIME_TYPES.includes(mimeType)) {
-    throw new ResponseError(response, 'Unsupported mime-type');
+    return {
+      type: 'Object',
+      url: {
+        type: 'Link',
+        href: url,
+        mediaType: mimeType,
+      },
+    };
   }
-
-  const url = getResponseUrl(response);
 
   if (mimeType === 'application/json') {
     const data = await response.json();

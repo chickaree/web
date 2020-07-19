@@ -75,7 +75,11 @@ async function getResponseDataHTML(url, doc) {
   const text = createQueryText(head);
 
   const obj = {
-    url: url.toString(),
+    url: {
+      type: 'Link',
+      href: url.toString(),
+      mediaType: 'text/html',
+    },
     attributedTo: {
       // @TODO Maybe make this more specific?
       type: 'Object',
@@ -174,7 +178,10 @@ async function getResponseDataHTML(url, doc) {
         if (data.mainEntity) {
           obj.orderedItems = toArray(data.mainEntity.itemListElement || []).map((item) => ({
             type: 'Object',
-            url: item.url,
+            url: item.url ? {
+              type: 'Link',
+              href: item.url,
+            } : undefined,
           }));
         }
       }
@@ -184,7 +191,10 @@ async function getResponseDataHTML(url, doc) {
         // @TODO handle embeded items?
         obj.orderedItems = toArray(data.itemListElement || []).map((item) => ({
           type: 'Object',
-          url: item.url,
+          url: item.url ? {
+            type: 'Link',
+            href: item.url,
+          } : undefined,
         }));
         if (data.mainEntityOfPage) {
           mainCreativeWork = data.mainEntityOfPage;
@@ -363,7 +373,11 @@ async function getResponseDataHTML(url, doc) {
       .map(({ link }) => ({
         type: 'Object',
         name: link.getAttribute('title'),
-        url: (new URL(link.getAttribute('href'), url)).toString(),
+        url: {
+          type: 'Link',
+          href: (new URL(link.getAttribute('href'), url)).toString(),
+          mediaType: link.getAttribute('type'),
+        },
       }));
 
     if (feeds.length > 0) {

@@ -4,7 +4,11 @@ import getImageObj from '../image-obj';
 async function getResponseDataJson(url, data) {
   return {
     type: 'OrderedCollection',
-    url: url.toString(),
+    url: {
+      type: 'Link',
+      href: url.toString(),
+      mediaType: 'application/json',
+    },
     name: data.title || '',
     icon: getImageObj(data.icon, url),
     summary: data.description || '',
@@ -18,7 +22,10 @@ async function getResponseDataJson(url, data) {
     }) => ({
       type: 'Object',
       name: title,
-      url: href,
+      url: href ? {
+        type: 'Link',
+        href,
+      } : undefined,
       image: getImageObj(image, url),
       published: published ? DateTime.fromISO(published).toUTC().toISO() : undefined,
       updated: modified ? DateTime.fromISO(modified).toUTC().toISO() : undefined,

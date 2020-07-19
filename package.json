@@ -21,6 +21,7 @@
     "@cinematix/reactor": "^2.0.0",
     "base64url": "^3.0.1",
     "dexie": "^3.0.1",
+    "dompurify": "^2.0.12",
     "jsdom": "^16.2.2",
     "jsonld": "^3.0.1",
     "luxon": "^1.23.0",

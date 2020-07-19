@@ -32,7 +32,7 @@ function feedReactor(value$) {
     flatMap(({ orderedItems, ...context }) => (
       from(orderedItems || []).pipe(
         flatMap((item) => (
-          fetchResource(item.url).pipe(
+          fetchResource(item.url.href).pipe(
             filter((response) => !!response.ok),
             flatMap((response) => getResponseData(response)),
             filter(({ type }) => type !== 'OrderedCollection'),
@@ -51,7 +51,7 @@ function feedReactor(value$) {
           return acc;
         }
 
-        acc.set(item.url, item);
+        acc.set(item.url.href, item);
 
         return acc;
       }, new Map()).values()],
@@ -78,7 +78,7 @@ function reducer(state, action) {
           ...state.items,
           ...action.payload,
         ].reduce((acc, item) => {
-          acc.set(item.url, item);
+          acc.set(item.url.href, item);
 
           return acc;
         }, new Map()).values()].sort((a, b) => {
@@ -136,7 +136,7 @@ function Index() {
         <div className="row">
           <div className="mt-3 col-lg-8 offset-lg-2 col">
             {items.map((item) => (
-              <Item key={item.url} resource={item} />
+              <Item key={item.url.href} resource={item} />
             ))}
           </div>
         </div>

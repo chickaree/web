@@ -21,7 +21,11 @@ async function getResponseDataXML(url, doc) {
     return {
       type: 'OrderedCollection',
       name: text('channel > title'),
-      url: url.toString(),
+      url: {
+        type: 'Link',
+        href: url.toString(),
+        mediaType: 'application/xml',
+      },
       icon: getImageObj(text('channel > image > url'), url),
       summary: text('channel > description'),
       orderedItems: items.map((el) => {
@@ -29,12 +33,16 @@ async function getResponseDataXML(url, doc) {
 
         const pubDate = itemText('pubDate');
         const link = itemText('link');
+        const href = link ? (new URL(link, url)).toString() : undefined;
 
         return {
           type: 'Object',
           name: itemText('title'),
           published: pubDate ? DateTime.fromRFC2822(pubDate).toUTC().toISO() : undefined,
-          url: link ? (new URL(link, url)).toString() : undefined,
+          url: href ? {
+            type: 'Link',
+            href,
+          } : undefined,
           summary: itemText('description'),
         };
       }),
@@ -47,7 +55,11 @@ async function getResponseDataXML(url, doc) {
     return {
       type: 'OrderedCollection',
       name: text(':root > title'),
-      url: url.toString(),
+      url: {
+        type: 'Link',
+        href: url.toString(),
+        mediaType: 'application/xml',
+      },
       icon: getImageObj(text(':root > icon'), url),
       summary: text(':root > description') || text(':root > subtitle'),
       orderedItems: items.map((el) => {
@@ -57,13 +69,17 @@ async function getResponseDataXML(url, doc) {
         const published = itemText('published');
         const updated = itemText('updated');
         const link = itemAttribute('link', 'href');
+        const href = link ? (new URL(link, url)).toString() : undefined;
 
         return {
           type: 'Object',
           name: itemText('title'),
           published: published ? DateTime.fromISO(published).toUTC().toISO() : undefined,
           updated: updated ? DateTime.fromISO(updated).toUTC().toISO() : undefined,
-          url: link ? (new URL(link, url)).toString() : undefined,
+          url: href ? {
+            type: 'Link',
+            href,
+          } : undefined,
           summary: itemText('summary'),
         };
       }),
