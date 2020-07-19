@@ -1,5 +1,3 @@
-const { defaultIfEmpty } = require("rxjs/operators");
-
 const CONTENT_TYPE = 'Content-Type';
 
 function getMimeType(response) {
