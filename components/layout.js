@@ -73,11 +73,32 @@ function reducer(state, action) {
 function NavLink({
   href,
   disabled,
+  visable,
   onClick,
   children,
 }) {
   const router = useRouter();
   const { pathname } = router;
+  const prefetchedRef = useRef(false);
+
+  useEffect(() => {
+    // Wait until the link is visiable.
+    if (!visable) {
+      return;
+    }
+
+    // Only prefetch once.
+    if (prefetchedRef.current) {
+      return;
+    }
+
+    router.prefetch(href);
+    prefetchedRef.current = true;
+  }, [
+    router,
+    visable,
+    href,
+  ]);
 
   const className = useMemo(() => [
     'nav-link',
@@ -149,20 +170,6 @@ const Layout = ({
   ]);
 
   useEffect(() => {
-    if (state.status !== STATUS_OPENING) {
-      return;
-    }
-
-    // When the menu is opening, prefetch the nav links.
-    // We have to do this manually because IntersectionObserver does not work with transform.
-    router.prefetch('/');
-    router.prefetch('/search');
-  }, [
-    router,
-    state.status,
-  ]);
-
-  useEffect(() => {
     if (state.status !== STATUS_CLOSED || state.navigate === '') {
       return;
     }
@@ -217,6 +224,8 @@ const Layout = ({
     dispatch({ type: NAVIGATION, payload: e.currentTarget.getAttribute('href') });
   }, []);
 
+  const isVisable = state.stuats !== STATUS_CLOSED;
+
   return (
     <>
       <Head>
@@ -236,7 +245,7 @@ const Layout = ({
               {/* @TODO Add icon attribution (about page?) */}
               {/* https://www.flaticon.com/free-icon/tree-silhouette_46564 */}
               <li className="nav-item home">
-                <NavLink href="/" onClick={handleNavClick} disabled={!isHomeEnabled}>
+                <NavLink href="/" onClick={handleNavClick} disabled={!isHomeEnabled} visable={isVisable}>
                   <svg version="1.1" x="0px" y="0px" width="18" height="18" viewBox="0 0 590.074 590.073">
                     <g>
                       <path
@@ -260,7 +269,7 @@ const Layout = ({
                 </NavLink>
               </li>
               <li className="nav-item search">
-                <NavLink href="/search" onClick={handleNavClick}>
+                <NavLink href="/search" onClick={handleNavClick} visable={isVisable}>
                   <svg xmlns="http://www.w3.org/2000/svg" height="23" viewBox="0 0 24 24" width="23">
                     <path d="M0 0h24v24H0z" fill="none" />
                     <path
