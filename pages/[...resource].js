@@ -139,8 +139,10 @@ function Resource() {
 
   return (
     <Layout backButton>
-      {meta}
-      {content}
+      <div className="pt-5">
+        {meta}
+        {content}
+      </div>
     </Layout>
   );
 }

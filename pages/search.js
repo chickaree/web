@@ -277,7 +277,7 @@ function Search() {
 
   return (
     <Layout>
-      <div className="container">
+      <div className="container pt-5">
         <div className="row">
           <div className="mt-3 col-lg-8 offset-lg-2 col">
             <form className="mb-3" onSubmit={handleSubmit}>

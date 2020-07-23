@@ -1,4 +1,4 @@
-<img src="public/img/logo.svg" width="30%" alt="Chickaree" />
+<img src="public/img/logo2.svg" width="30%" alt="Chickaree" />
 
 A new social network designed to reach all your followers without an algorithm getting in the way.
 

@@ -8,7 +8,6 @@ import {
   useRef,
 } from 'react';
 import { useRouter } from 'next/router';
-import useHomeEnabled from '../hooks/home-enabled';
 import BackButton from './back-button';
 
 const MENU_TOGGLE = 'MENU_TOGGLE';
@@ -128,7 +127,6 @@ const Layout = ({
 }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const router = useRouter();
-  const isHomeEnabled = useHomeEnabled();
   const canvasRef = useRef(undefined);
 
   // Update the state when the animation completes.
@@ -235,7 +233,7 @@ const Layout = ({
         <meta key="og:url" property="og:url" content="https://chickar.ee" />
         <meta key="og:description" property="og:description" content="A new social network designed to reach all your followers without an algorithm getting in the way." />
         <meta key="og:type" property="og:type" content="website" />
-        <meta key="og:image" property="og:image" content="https://chickar.ee/img/og-background.png" />
+        <meta key="og:image" property="og:image" content="https://chickar.ee/img/og-background2.png" />
         <script key="schema" type="application/ld+json" />
       </Head>
       <div className="wrapper">
@@ -245,7 +243,7 @@ const Layout = ({
               {/* @TODO Add icon attribution (about page?) */}
               {/* https://www.flaticon.com/free-icon/tree-silhouette_46564 */}
               <li className="nav-item home">
-                <NavLink href="/" onClick={handleNavClick} disabled={!isHomeEnabled} visable={isVisable}>
+                <NavLink href="/" onClick={handleNavClick} visable={isVisable}>
                   <svg version="1.1" x="0px" y="0px" width="18" height="18" viewBox="0 0 590.074 590.073">
                     <g>
                       <path
@@ -290,7 +288,7 @@ const Layout = ({
                 <div className="col-8 text-center">
                   <Link href="/">
                     <a>
-                      <img src="/img/icon.svg" alt="chickar.ee" />
+                      <img src="/img/icon2.svg" alt="chickar.ee" />
                     </a>
                   </Link>
                 </div>
@@ -307,8 +305,8 @@ const Layout = ({
           </header>
           {/* eslint-disable-next-line max-len */}
           {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions,jsx-a11y/click-events-have-key-events */}
-          <main className="content pt-5" onClick={[STATUS_OPEN, STATUS_OPENING].includes(state.status) ? handleMenuClick : undefined}>
-            <div className="event-container">
+          <main className="content min-vh-100" onClick={[STATUS_OPEN, STATUS_OPENING].includes(state.status) ? handleMenuClick : undefined}>
+            <div className="event-container min-vh-100">
               {children}
             </div>
           </main>

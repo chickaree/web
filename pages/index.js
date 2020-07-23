@@ -1,10 +1,8 @@
 import {
   useContext,
   useReducer,
-  useEffect,
   useMemo,
 } from 'react';
-import { useRouter } from 'next/router';
 import { from } from 'rxjs';
 import {
   switchMap,
@@ -13,6 +11,7 @@ import {
   bufferTime,
   filter,
 } from 'rxjs/operators';
+import Link from 'next/link';
 import { DateTime } from 'luxon';
 import useReactor from '@cinematix/reactor';
 import AppContext from '../context/app';
@@ -20,7 +19,6 @@ import fetchResource from '../utils/fetch-resource';
 import getResponseData from '../utils/response/data';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
-import useHomeEnabled from '../hooks/home-enabled';
 
 function feedReactor(value$) {
   return value$.pipe(
@@ -96,22 +94,24 @@ function reducer(state, action) {
 }
 
 function Index() {
-  const router = useRouter();
   const [app] = useContext(AppContext);
-  const isHomeEnabled = useHomeEnabled();
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useReactor(feedReactor, dispatch, [app.following]);
 
-  useEffect(() => {
-    if (isHomeEnabled) {
-      return;
+  const hasFeed = useMemo(() => {
+    if (app.status === 'init') {
+      return true;
     }
 
-    router.replace('/search');
+    if (app.following.length > 0) {
+      return true;
+    }
+
+    return false;
   }, [
-    isHomeEnabled,
-    router,
+    app.status,
+    app.following,
   ]);
 
 
@@ -130,9 +130,26 @@ function Index() {
     state.items,
   ]);
 
+  if (!hasFeed) {
+    return (
+      <Layout>
+        <div className="container min-vh-100">
+          <div className="row pt-5 align-content-stretch align-items-center min-vh-100">
+            <div className="mt-3 col-lg-8 offset-lg-2 col text-center">
+              <h2>Welcome!</h2>
+              <p>
+                To get started, try <Link href="/search"><a>searching</a></Link> for feeds by name or by <Link href="/search"><a>providing</a></Link> a URL.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
-      <div className="container">
+      <div className="container pt-5">
         <div className="row">
           <div className="mt-3 col-lg-8 offset-lg-2 col">
             {items.map((item) => (
