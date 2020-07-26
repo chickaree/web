@@ -3,3 +3,4 @@
 /dist
 /html
 /worker
+/public/sw.js

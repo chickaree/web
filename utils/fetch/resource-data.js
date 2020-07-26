@@ -2,7 +2,7 @@ import {
   of, EMPTY, from, concat,
 } from 'rxjs';
 import {
-  flatMap, catchError, filter, tap, toArray, defaultIfEmpty,
+  flatMap, catchError, filter, toArray,
 } from 'rxjs/operators';
 import getResponseData from '../response/data';
 import fetchResource from './resource';
@@ -21,40 +21,28 @@ const RESOURCE_CACHE = 'resource';
 function fetchFromCache(resource) {
   return from(caches.open(RESOURCE_CACHE)).pipe(
     flatMap((cache) => cache.match(resource)),
-    filter((response) => !!response),
   );
-}
-
-async function cacheResponse(request, response) {
-  const clonedResponse = response.clone();
-  const cache = await caches.open(RESOURCE_CACHE);
-
-  return cache.put(request, clonedResponse);
 }
 
 function fetchResourceData(resource, cacheStrategy = CACHE_FIRST_NETWORK_FALLBACK) {
   switch (cacheStrategy) {
     case CACHE_FIRST_NETWORK_FALLBACK:
       return fetchFromCache(resource).pipe(
+        flatMap((response) => {
+          // If it was not in the cache, return from the network.
+          if (!response) {
+            return fetchResource(resource);
+          }
+
+          return of(response);
+        }),
         filter((response) => !!response.ok),
         flatMap((response) => getResponseData(response)),
-        catchError((e) => (
-          fetchResource(resource).pipe(
-            tap((response) => cacheResponse(resource, response)),
-            filter((response) => !!response.ok),
-            flatMap((response) => getResponseData(response.clone())),
-          )
-        )),
       );
     case REVALIDATE:
       return concat(
-        fetchFromCache(resource).pipe(
-          defaultIfEmpty(undefined),
-          catchError(() => of(undefined)),
-        ),
+        fetchFromCache(resource),
         fetchResource(resource).pipe(
-          tap((response) => cacheResponse(resource, response)),
-          defaultIfEmpty(undefined),
           catchError(() => of(undefined)),
         ),
       ).pipe(
@@ -74,7 +62,7 @@ function fetchResourceData(resource, cacheStrategy = CACHE_FIRST_NETWORK_FALLBAC
 
           return concat(
             getResponseData(cached),
-            getResponseData(current.clone()),
+            getResponseData(current),
           ).pipe(
             toArray(),
             filter(([cachedDate, currentData]) => {
@@ -89,7 +77,6 @@ function fetchResourceData(resource, cacheStrategy = CACHE_FIRST_NETWORK_FALLBAC
       );
     case NETWORK_FIRST_CACHE_FALLBACK:
       return fetchResource(resource).pipe(
-        tap((response) => cacheResponse(resource, response)),
         catchError(() => fetchFromCache(resource)),
         flatMap((response) => {
           if (!response || !response.ok) {

@@ -7,6 +7,7 @@ import {
 import Dexie from 'dexie';
 import { ulid } from 'ulid';
 import { DateTime } from 'luxon';
+import { Workbox } from 'workbox-window';
 import AppContext from '../context/app';
 import '../styles/styles.scss';
 
@@ -75,6 +76,12 @@ function Chickaree({ Component, pageProps }) {
         payload: feeds,
       });
     });
+
+    const wb = new Workbox('/sw.js');
+
+    if (!process.env.DEV) {
+      wb.register();
+    }
   }, []);
 
   // Intercept a dispatch and convert it to an action to be saved in IndexedDB.
