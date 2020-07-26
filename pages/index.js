@@ -2,6 +2,8 @@ import {
   useContext,
   useReducer,
   useMemo,
+  useEffect,
+  useRef,
 } from 'react';
 import { from } from 'rxjs';
 import {
@@ -10,6 +12,7 @@ import {
   map,
   bufferTime,
   filter,
+  debounceTime,
 } from 'rxjs/operators';
 import Link from 'next/link';
 import { DateTime } from 'luxon';
@@ -17,19 +20,26 @@ import useReactor from '@cinematix/reactor';
 import AppContext from '../context/app';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
-import fetchResourceData, { CACHE_FIRST_NETWORK_FALLBACK } from '../utils/fetch/resource-data';
+import createFetchResourceData, { CACHE_FIRST, REVALIDATE, NETWORK_FIRST } from '../utils/fetch/resource-data';
 
 function feedReactor(value$) {
+  const fetchResourceData = createFetchResourceData();
+
   return value$.pipe(
     map(([feeds]) => feeds),
-    switchMap((feeds) => from(feeds)),
-    flatMap((feed) => fetchResourceData(feed, CACHE_FIRST_NETWORK_FALLBACK)),
-    flatMap(({ orderedItems, ...context }) => (
-      from(orderedItems || []).pipe(
-        flatMap((item) => (
-          fetchResourceData(item.url.href, CACHE_FIRST_NETWORK_FALLBACK).pipe(
-            filter(({ type }) => type !== 'OrderedCollection'),
-            map((data) => ({ ...item, ...data, context })),
+    // This isn't correct... it waits for the first one. :/
+    debounceTime(6000),
+    switchMap((feeds, index) => (
+      from(feeds).pipe(
+        flatMap((feed) => fetchResourceData(feed, index === 0 ? CACHE_FIRST : REVALIDATE )),
+        flatMap(({ orderedItems, ...context }) => (
+          from(orderedItems || []).pipe(
+            flatMap((item) => (
+              fetchResourceData(item.url.href, index === 0 ? CACHE_FIRST : NETWORK_FIRST).pipe(
+                filter(({ type }) => type !== 'OrderedCollection'),
+                map((data) => ({ ...item, ...data, context })),
+              )
+            )),
           )
         )),
       )
@@ -91,8 +101,19 @@ function reducer(state, action) {
 function Index() {
   const [app] = useContext(AppContext);
   const [state, dispatch] = useReducer(reducer, initialState);
+  const followingRef = useRef(state.following);
 
-  useReactor(feedReactor, dispatch, [app.following]);
+  const subject = useReactor(feedReactor, dispatch, [app.following]);
+
+  useEffect(() => {
+    followingRef.current = state.following;
+  }, [
+    state.following,
+  ]);
+
+  useEffect(() => {
+    subject.next([followingRef.current]);
+  }, []);
 
   const hasFeed = useMemo(() => {
     if (app.status === 'init') {

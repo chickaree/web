@@ -3,6 +3,7 @@ import { precacheAndRoute } from 'workbox-precaching';
 import { encode } from 'base64url';
 import getMimeType from './utils/mime-type';
 import MIME_TYPES from './utils/mime-types';
+import RESOURCE_CACHE from './utils/resource/cache';
 
 // eslint-disable-next-line no-underscore-dangle,no-restricted-globals
 precacheAndRoute(self.__WB_MANIFEST);
@@ -11,7 +12,7 @@ registerRoute(
   ({ request }) => request.mode === 'cors',
   async ({ url, request, event }) => {
     //  Start the cache opening.
-    const cacheOpen = caches.open('resource');
+    const cacheOpen = caches.open(RESOURCE_CACHE);
 
     try {
       const headResponse = await fetch(request, {

@@ -2,93 +2,100 @@ import {
   of, EMPTY, from, concat,
 } from 'rxjs';
 import {
-  flatMap, catchError, filter, toArray,
+  flatMap, catchError, filter, toArray, defaultIfEmpty,
 } from 'rxjs/operators';
 import getResponseData from '../response/data';
 import fetchResource from './resource';
+import RESOURCE_CACHE from '../resource/cache';
 
 // Retrieve cached version, or network version on failure.
-export const CACHE_FIRST_NETWORK_FALLBACK = 'CACHE_FIRST_NETWORK_FALLBACK';
+export const CACHE_FIRST = 'CACHE_FIRST';
 
 // Retrieve a new version, or nothing.
 export const REVALIDATE = 'REVALIDATE';
 
 // Retrieve network version, or cached version on failure.
-export const NETWORK_FIRST_CACHE_FALLBACK = 'NETWORK_FIRST_CACHE_FALLBACK';
+export const NETWORK_FIRST = 'NETWORK_FIRST';
 
-const RESOURCE_CACHE = 'resource';
+function createFetchFromCache() {
+  const cacheOpen = typeof caches !== 'undefined' ? caches.open(RESOURCE_CACHE) : Promise.resolve();
 
-function fetchFromCache(resource) {
-  return from(caches.open(RESOURCE_CACHE)).pipe(
-    flatMap((cache) => cache.match(resource)),
-  );
+  return (resource) => {
+    return from(cacheOpen).pipe(
+      filter((cache) => !!cache),
+      flatMap((cache) => cache.match(resource)),
+      defaultIfEmpty(undefined),
+    );
+  };
 }
 
-function fetchResourceData(resource, cacheStrategy = CACHE_FIRST_NETWORK_FALLBACK) {
-  switch (cacheStrategy) {
-    case CACHE_FIRST_NETWORK_FALLBACK:
-      return fetchFromCache(resource).pipe(
-        flatMap((response) => {
-          // If it was not in the cache, return from the network.
-          if (!response) {
-            return fetchResource(resource);
-          }
+function createFetchResourceData() {
+  const fetchFromCache = createFetchFromCache();
 
-          return of(response);
-        }),
-        filter((response) => !!response.ok),
-        flatMap((response) => getResponseData(response)),
-      );
-    case REVALIDATE:
-      return concat(
-        fetchFromCache(resource),
-        fetchResource(resource).pipe(
-          catchError(() => of(undefined)),
-        ),
-      ).pipe(
-        toArray(),
-        flatMap(([cached, current]) => {
-          if (!cached && !current) {
-            return EMPTY;
-          }
+  return (resource, cacheStrategy = CACHE_FIRST) => {
+    switch (cacheStrategy) {
+      case CACHE_FIRST:
+        return fetchFromCache(resource).pipe(
+          flatMap((response) => {
+            // If it was not in the cache, return from the network.
+            if (!response) {
+              return fetchResource(resource);
+            }
 
-          if (!current || !current.ok) {
-            return EMPTY;
-          }
+            return of(response);
+          }),
+          filter((response) => !!response || !!response.ok),
+          flatMap((response) => getResponseData(response)),
+        );
+      case REVALIDATE:
+        return concat(
+          fetchFromCache(resource),
+          fetchResource(resource),
+        ).pipe(
+          toArray(),
+          flatMap(([cached, current]) => {
+            if (!cached && !current) {
+              return EMPTY;
+            }
 
-          if (!cached || !cached.ok) {
-            return getResponseData(current);
-          }
+            if (!current || !current.ok) {
+              return EMPTY;
+            }
 
-          return concat(
-            getResponseData(cached),
-            getResponseData(current),
-          ).pipe(
-            toArray(),
-            filter(([cachedDate, currentData]) => {
-              if (JSON.stringify(cachedDate) === JSON.stringify(currentData)) {
-                return EMPTY;
-              }
+            if (!cached || !cached.ok) {
+              return getResponseData(current);
+            }
 
-              return of(currentData);
-            }),
-          );
-        }),
-      );
-    case NETWORK_FIRST_CACHE_FALLBACK:
-      return fetchResource(resource).pipe(
-        catchError(() => fetchFromCache(resource)),
-        flatMap((response) => {
-          if (!response || !response.ok) {
-            return EMPTY;
-          }
+            return concat(
+              getResponseData(cached),
+              getResponseData(current),
+            ).pipe(
+              toArray(),
+              filter(([cachedDate, currentData]) => {
+                if (JSON.stringify(cachedDate) === JSON.stringify(currentData)) {
+                  return EMPTY;
+                }
 
-          return getResponseData(response);
-        }),
-      );
-    default:
-      throw new Error('Invalid Cache Strategy');
+                return of(currentData);
+              }),
+            );
+          }),
+        );
+      case NETWORK_FIRST:
+        // Cache fallback is handled by the service worker.
+        return fetchResource(resource).pipe(
+          flatMap((response) => {
+            if (!response || !response.ok) {
+              return EMPTY;
+            }
+
+            return getResponseData(response);
+          }),
+        );
+      default:
+        throw new Error('Invalid Cache Strategy');
+    }
   }
 }
 
-export default fetchResourceData;
+export default createFetchResourceData;
