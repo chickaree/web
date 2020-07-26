@@ -9,7 +9,7 @@ import {
   switchMap, filter, flatMap, map,
 } from 'rxjs/operators';
 import getResourceLinkData from '../utils/resource/link-data';
-import fetchResource from '../utils/fetch-resource';
+import fetchResource from '../utils/fetch/resource';
 import getResponseUrl from '../utils/response-url';
 import Layout from '../components/layout';
 import getResponseData from '../utils/response/data';

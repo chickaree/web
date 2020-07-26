@@ -14,7 +14,7 @@ import {
 } from 'rxjs/operators';
 import { fromFetch } from 'rxjs/fetch';
 import Layout from '../components/layout';
-import fetchResource from '../utils/fetch-resource';
+import fetchResource from '../utils/fetch/resource';
 import getResponseData from '../utils/response/data';
 import MIME_TYPES from '../utils/mime-types';
 import Item from '../components/card/item';

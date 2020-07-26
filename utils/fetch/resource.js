@@ -2,8 +2,8 @@ import { encode } from 'base64url';
 import { of } from 'rxjs';
 import { catchError, flatMap } from 'rxjs/operators';
 import { fromFetch } from 'rxjs/fetch';
-import MIME_TYPES from './mime-types';
-import getMimeType from './mime-type';
+import MIME_TYPES from '../mime-types';
+import getMimeType from '../mime-type';
 
 function fetchResource(resource, init = {}) {
   const options = {

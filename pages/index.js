@@ -15,24 +15,19 @@ import Link from 'next/link';
 import { DateTime } from 'luxon';
 import useReactor from '@cinematix/reactor';
 import AppContext from '../context/app';
-import fetchResource from '../utils/fetch-resource';
-import getResponseData from '../utils/response/data';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
+import fetchResourceData, { CACHE_FIRST_NETWORK_FALLBACK } from '../utils/fetch/resource-data';
 
 function feedReactor(value$) {
   return value$.pipe(
     map(([feeds]) => feeds),
     switchMap((feeds) => from(feeds)),
-    flatMap((feed) => fetchResource(feed)),
-    filter((response) => !!response.ok),
-    flatMap((response) => getResponseData(response)),
+    flatMap((feed) => fetchResourceData(feed, CACHE_FIRST_NETWORK_FALLBACK)),
     flatMap(({ orderedItems, ...context }) => (
       from(orderedItems || []).pipe(
         flatMap((item) => (
-          fetchResource(item.url.href).pipe(
-            filter((response) => !!response.ok),
-            flatMap((response) => getResponseData(response)),
+          fetchResourceData(item.url.href, CACHE_FIRST_NETWORK_FALLBACK).pipe(
             filter(({ type }) => type !== 'OrderedCollection'),
             map((data) => ({ ...item, ...data, context })),
           )

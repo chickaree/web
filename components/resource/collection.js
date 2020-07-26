@@ -14,7 +14,7 @@ import {
 } from 'rxjs/operators';
 import { DateTime } from 'luxon';
 import useReactor from '@cinematix/reactor';
-import fetchResource from '../../utils/fetch-resource';
+import fetchResource from '../../utils/fetch/resource';
 import Icon from '../icon';
 import getResponseData from '../../utils/response/data';
 import MIME_TYPES from '../../utils/mime-types';
