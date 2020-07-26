@@ -5,14 +5,13 @@ import {
   useEffect,
   useRef,
 } from 'react';
-import { from } from 'rxjs';
+import { from, concat } from 'rxjs';
 import {
   switchMap,
   flatMap,
   map,
   bufferTime,
   filter,
-  debounceTime,
 } from 'rxjs/operators';
 import Link from 'next/link';
 import { DateTime } from 'luxon';
@@ -22,28 +21,46 @@ import Layout from '../components/layout';
 import Item from '../components/card/item';
 import createFetchResourceData, { CACHE_FIRST, REVALIDATE, NETWORK_FIRST } from '../utils/fetch/resource-data';
 
-function feedReactor(value$) {
+function createFeedStream() {
   const fetchResourceData = createFetchResourceData();
+
+  return (feeds, cacheStrategy) => (
+    from(feeds).pipe(
+      flatMap((feed) => fetchResourceData(feed, cacheStrategy)),
+      flatMap(({ orderedItems, ...context }) => (
+        from(orderedItems || []).pipe(
+          flatMap((item) => (
+            fetchResourceData(
+              item.url.href,
+              cacheStrategy === REVALIDATE ? NETWORK_FIRST : cacheStrategy,
+            ).pipe(
+              filter(({ type }) => type !== 'OrderedCollection'),
+              map((data) => ({ ...item, ...data, context })),
+            )
+          )),
+        )
+      )),
+    )
+  );
+}
+
+function feedReactor(value$) {
+  const feedStream = createFeedStream();
 
   return value$.pipe(
     map(([feeds]) => feeds),
-    // This isn't correct... it waits for the first one. :/
-    debounceTime(6000),
-    switchMap((feeds, index) => (
-      from(feeds).pipe(
-        flatMap((feed) => fetchResourceData(feed, index === 0 ? CACHE_FIRST : REVALIDATE )),
-        flatMap(({ orderedItems, ...context }) => (
-          from(orderedItems || []).pipe(
-            flatMap((item) => (
-              fetchResourceData(item.url.href, index === 0 ? CACHE_FIRST : NETWORK_FIRST).pipe(
-                filter(({ type }) => type !== 'OrderedCollection'),
-                map((data) => ({ ...item, ...data, context })),
-              )
-            )),
-          )
-        )),
-      )
-    )),
+    filter((feeds) => feeds.length > 0),
+    switchMap((feeds, index) => {
+      if (index === 0) {
+        return concat(
+          feedStream(feeds, CACHE_FIRST),
+          feedStream(feeds, REVALIDATE),
+        );
+      }
+
+
+      return feedStream(feeds, REVALIDATE);
+    }),
     // Group by tick.
     bufferTime(0),
     filter((a) => a.length > 0),
@@ -103,16 +120,16 @@ function Index() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const followingRef = useRef(state.following);
 
-  const subject = useReactor(feedReactor, dispatch, [app.following]);
+  useReactor(feedReactor, dispatch, [app.following]);
 
   useEffect(() => {
-    followingRef.current = state.following;
+    followingRef.current = app.following;
   }, [
-    state.following,
+    app.following,
   ]);
 
   useEffect(() => {
-    subject.next([followingRef.current]);
+    // @TODO Add an event handler for handling when people come back to the page.
   }, []);
 
   const hasFeed = useMemo(() => {

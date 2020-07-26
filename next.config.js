@@ -14,7 +14,7 @@ module.exports = {
 
     if (!isServer && !dev) {
       config.plugins.push(new InjectManifest({
-        swSrc: 'sw.js',
+        swSrc: join(__dirname, 'sw.js'),
         swDest: join(__dirname, 'public', 'sw.js'),
       }));
     }

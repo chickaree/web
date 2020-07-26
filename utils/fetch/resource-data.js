@@ -2,7 +2,7 @@ import {
   of, EMPTY, from, concat,
 } from 'rxjs';
 import {
-  flatMap, catchError, filter, toArray, defaultIfEmpty,
+  flatMap, filter, toArray, defaultIfEmpty,
 } from 'rxjs/operators';
 import getResponseData from '../response/data';
 import fetchResource from './resource';
@@ -20,13 +20,13 @@ export const NETWORK_FIRST = 'NETWORK_FIRST';
 function createFetchFromCache() {
   const cacheOpen = typeof caches !== 'undefined' ? caches.open(RESOURCE_CACHE) : Promise.resolve();
 
-  return (resource) => {
-    return from(cacheOpen).pipe(
+  return (resource) => (
+    from(cacheOpen).pipe(
       filter((cache) => !!cache),
       flatMap((cache) => cache.match(resource)),
       defaultIfEmpty(undefined),
-    );
-  };
+    )
+  );
 }
 
 function createFetchResourceData() {
@@ -76,6 +76,9 @@ function createFetchResourceData() {
                   return EMPTY;
                 }
 
+                // @TODO When this happens, send an Activity to delete certain items.
+                //       in fact, it might be better to only send activity...
+
                 return of(currentData);
               }),
             );
@@ -95,7 +98,7 @@ function createFetchResourceData() {
       default:
         throw new Error('Invalid Cache Strategy');
     }
-  }
+  };
 }
 
 export default createFetchResourceData;
