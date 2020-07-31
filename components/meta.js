@@ -5,11 +5,14 @@ import getResourceMetadata from '../utils/resource/metadata';
 function Meta({
   resource,
 }) {
-  const { og, schema, title } = useMemo(() => getResourceMetadata(resource), [resource]);
+  const {
+    og, schema, title, robots,
+  } = useMemo(() => getResourceMetadata(resource), [resource]);
 
   return (
     <Head>
       {title ? <title>{title}</title> : null}
+      {robots ? <meta key="robots" name="robots" content={robots} /> : null}
       {og.title ? <meta key="og:title" property="og:title" content={og.title} /> : null}
       {og.url ? <meta key="og:url" property="og:url" content={og.url} /> : null}
       {og.description ? <meta key="og:description" property="og:description" content={og.description} /> : null}

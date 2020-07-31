@@ -228,6 +228,7 @@ const Layout = ({
     <>
       <Head>
         <title>Chickaree</title>
+        <meta key="robots" name="robots" content="all" />
         <meta key="viewport" name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta key="og:title" property="og:title" content="Chickaree" />
         <meta key="og:url" property="og:url" content="https://chickar.ee" />

@@ -20,16 +20,19 @@ function getResourceMetadata(resource) {
   const schema = {
     '@context': 'http://schema.org/',
   };
+  let robots = 'all';
   let title;
 
   if (!resource || !resource.url || !resource.url.href) {
     return {
+      title,
+      robots,
       og,
       schema,
-      title,
     };
   }
 
+  const resourceURL = new URL(resource.url.href);
   const url = new URL(getResourceLinkData(resource.url.href).as, URL_BASE);
   schema.url = url.toString();
   og.url = url.toString();
@@ -90,6 +93,12 @@ function getResourceMetadata(resource) {
         } else if (resource.attributedTo && resource.attributedTo.name) {
           title = createTitle(resource.attributedTo.name);
         }
+
+        // Since there is no way to know if a collection is private or not,
+        // only allow indexing collections if they are in the root.
+        if (resourceURL.pathname !== '/') {
+          robots = 'none';
+        }
         break;
       case 'Article':
         schema['@type'] = 'ItemPage';
@@ -140,6 +149,7 @@ function getResourceMetadata(resource) {
 
   return {
     title,
+    robots,
     og,
     schema,
   };
