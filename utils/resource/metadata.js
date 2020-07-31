@@ -20,7 +20,7 @@ function getResourceMetadata(resource) {
   const schema = {
     '@context': 'http://schema.org/',
   };
-  let robots = 'all';
+  let robots;
   let title;
 
   if (!resource || !resource.url || !resource.url.href) {
