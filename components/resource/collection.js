@@ -4,7 +4,7 @@ import {
   useContext,
   useCallback,
 } from 'react';
-import { from } from 'rxjs';
+import { from, concat, of } from 'rxjs';
 import {
   switchMap,
   flatMap,
@@ -131,36 +131,41 @@ function reducer(state, action) {
 function itemReactor(value$) {
   return value$.pipe(
     switchMap(([{ orderedItems, ...resource }]) => (
-      from(orderedItems || []).pipe(
-        flatMap((item, index) => (
-          fetchResource(item.url.href).pipe(
-            filter((response) => !!response.ok),
-            flatMap((response) => getResponseData(response)),
-            map((data) => ({
-              data: {
-                ...item,
-                ...data,
-                context: resource,
-              },
-              index,
-            })),
-          )
-        )),
-        // Group by tick.
-        bufferTime(0),
-        filter((a) => a.length > 0),
-        map((feedItems) => ({
-          type: 'ITEMS_ADD',
-          payload: [...feedItems.reduce((acc, item) => {
-            if (!item.data) {
+      concat(
+        of({
+          type: 'RESET',
+        }),
+        from(orderedItems || []).pipe(
+          flatMap((item, index) => (
+            fetchResource(item.url.href).pipe(
+              filter((response) => !!response.ok),
+              flatMap((response) => getResponseData(response)),
+              map((data) => ({
+                data: {
+                  ...item,
+                  ...data,
+                  context: resource,
+                },
+                index,
+              })),
+            )
+          )),
+          // Group by tick.
+          bufferTime(0),
+          filter((a) => a.length > 0),
+          map((feedItems) => ({
+            type: 'ITEMS_ADD',
+            payload: [...feedItems.reduce((acc, item) => {
+              if (!item.data) {
+                return acc;
+              }
+
+              acc.set(item.data.url.href, item);
+
               return acc;
-            }
-
-            acc.set(item.data.url.href, item);
-
-            return acc;
-          }, new Map()).values()],
-        })),
+            }, new Map()).values()],
+          })),
+        ),
       )
     )),
   );

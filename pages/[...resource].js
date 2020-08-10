@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { decode } from 'base64url';
 import useReactor from '@cinematix/reactor';
 import {
-  of, concat, from,
+  of, concat, from, EMPTY,
 } from 'rxjs';
 import {
   switchMap, filter, flatMap, map,
@@ -39,9 +39,7 @@ function resourceReactor(value$) {
   return value$.pipe(
     filter(([domain]) => !!domain),
     switchMap(([domain, hash]) => {
-      let init = {
-        type: 'RESET',
-      };
+      let init = EMPTY;
 
       const element = document.getElementById('resource');
       if (element) {
@@ -52,10 +50,10 @@ function resourceReactor(value$) {
           && dataset.hash === (hash || '')
         ) {
           try {
-            init = {
+            init = of({
               type: 'RESOURCE_SET',
               payload: JSON.parse(element.innerText),
-            };
+            });
           } catch (e) {
             // eslint-disable-next-line no-console
             console.error(e);
@@ -67,7 +65,7 @@ function resourceReactor(value$) {
       const resource = `https://${domain}${path}`;
 
       return concat(
-        of(init),
+        init,
         fetchResource(resource).pipe(
           filter((response) => !!response.ok),
           flatMap((response) => {
