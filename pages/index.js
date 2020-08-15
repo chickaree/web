@@ -4,6 +4,7 @@ import {
   useMemo,
   useEffect,
   useRef,
+  useCallback,
 } from 'react';
 import { from, concat, fromEvent } from 'rxjs';
 import {
@@ -32,7 +33,7 @@ function createFeedStream() {
           flatMap((activity) => {
             const { object: item } = activity;
 
-            if (activity.type === 'Delete') {
+            if (activity.type === 'Remove') {
               return activity;
             }
 
@@ -61,9 +62,10 @@ function feedReactor(value$) {
   const feedStream = createFeedStream();
 
   return value$.pipe(
-    map(([feeds]) => feeds),
-    filter((feeds) => feeds.length > 0),
-    switchMap((feeds, index) => {
+    map(([status, feeds]) => ({ status, feeds })),
+    filter(({ status }) => status === 'ready'),
+    filter(({ feeds }) => feeds.length > 0),
+    switchMap(({ feeds }, index) => {
       if (index === 0) {
         return concat(
           feedStream(feeds, CACHE_FIRST),
@@ -121,7 +123,7 @@ function activityReducer(state, activity) {
         ...state.slice(index + 1),
       ];
     }
-    case 'Delete':
+    case 'Remove':
       return state.filter((item) => item.url.href !== object.url.href);
     default:
       throw new Error('Invalid Activity');
@@ -159,15 +161,29 @@ function reducer(state, action) {
 function Index() {
   const [app] = useContext(AppContext);
   const [state, dispatch] = useReducer(reducer, initialState);
-  const followingRef = useRef(state.following);
+  const followingRef = useRef(app.following);
+  const statusRef = useRef(app.status);
 
-  const subject = useReactor(feedReactor, dispatch, [app.following]);
+  const subject = useReactor(feedReactor, dispatch, [
+    app.status,
+    app.following
+  ]);
 
   // Update a reference to the current state.
   useEffect(() => {
     followingRef.current = app.following;
+    statusRef.current = app.status;
   }, [
     app.following,
+    app.status,
+  ]);
+
+  const refresh = useCallback(() => {
+    subject.next([statusRef.current, followingRef.current]);
+  }, [
+    subject,
+    followingRef,
+    statusRef,
   ]);
 
   useEffect(() => {
@@ -175,13 +191,15 @@ function Index() {
     const obs = fromEvent(document, 'visibilitychange').pipe(
       filter(() => document.visibilityState === 'visible'),
       filter(() => window.scrollY === 0),
-    ).subscribe(() => subject.next([followingRef.current]));
+    ).subscribe(() => refresh());
 
     return () => obs.unsubscribe();
-  }, []);
+  }, [
+    refresh,
+  ]);
 
   const hasFeed = useMemo(() => {
-    if (app.status === 'init') {
+    if (app.status !== 'ready') {
       return true;
     }
 
@@ -229,7 +247,7 @@ function Index() {
   }
 
   return (
-    <Layout>
+    <Layout onRefresh={refresh}>
       <div className="container pt-5">
         <div className="row">
           <div className="mt-3 col-lg-8 offset-lg-2 col">

@@ -29,7 +29,7 @@ function createFetchFromCache() {
   );
 }
 
-function wrapObject(object) {
+function wrapObject(object, activityType = 'Create') {
   const { type } = object;
 
   switch (type) {
@@ -40,7 +40,7 @@ function wrapObject(object) {
       };
     default:
       return {
-        type: 'Create',
+        type: activityType,
         object,
       };
   }
@@ -91,15 +91,44 @@ function createFetchResourceActivity() {
               getResponseData(current),
             ).pipe(
               toArray(),
-              filter(([cachedDate, currentData]) => {
-                if (JSON.stringify(cachedDate) === JSON.stringify(currentData)) {
+              filter(([cachedData, currentData]) => {
+                if (JSON.stringify(cachedData) === JSON.stringify(currentData)) {
                   return EMPTY;
                 }
 
-                // @TODO When this happens, send an Activity to delete certain items.
-                //       in fact, it might be better to only send activity...
+                if (currentData.type === 'OrderedCollection') {
+                  const cachedItems = cachedData.orderedItems || [];
+                  const currentItems = currentData.orderedItems || [];
 
-                return of(wrapObject(currentData));
+                  const create = currentItems.filter((currentItem) => !cachedItems.some((cachedItem) => currentItem.url.href === cachedItem.url.href));
+
+                  const update = cachedItems.filter((cachedItem) => {
+                    const currentItem = cachedItems.find((item) => item.url.href === cachedItem.url.href);
+
+                    if (!currentItem) {
+                      return false;
+                    }
+
+                    if (JSON.stringify(cachedItem) === JSON.stringify(currentItem)) {
+                      return false;
+                    }
+
+                    return true;
+                  });
+
+                  const remove = cachedItems.filter((cachedItem) => !currentItems.some((currentItem) => cachedItem.url.href === currentItem.url.href));
+
+                  return {
+                    ...currentData,
+                    orderedItems: [
+                      ...create.map((item) => wrapObject(item, 'Create')),
+                      ...update.map((item) => wrapObject(item, 'Update')),
+                      ...remove.map((item) => wrapObject(item, 'Remove')),
+                    ],
+                  }
+                }
+
+                return of(wrapObject(currentData, 'Update'));
               }),
             );
           }),

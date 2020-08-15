@@ -123,6 +123,7 @@ function NavLink({
 
 const Layout = ({
   backButton = false,
+  onRefresh,
   children,
 }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -222,6 +223,46 @@ const Layout = ({
     dispatch({ type: NAVIGATION, payload: e.currentTarget.getAttribute('href') });
   }, []);
 
+  const onLogoClick = useCallback(() => {
+    if (!onRefresh) {
+      window.location.reload();
+      return;
+    }
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+    onRefresh();
+  }, [
+    onRefresh,
+  ]);
+
+  const logo = useMemo(() => {
+    const img = (
+      <img src="/img/icon2.svg" alt="chickar.ee" />
+    );
+
+    if (router.pathname === '/') {
+      return (
+        <button type="button" className="btn btn-link" title="Refresh" onClick={onLogoClick}>
+          {img}
+        </button>
+      );
+    }
+
+    return (
+      <Link href="/">
+        <a>
+          {img}
+        </a>
+      </Link>
+    );
+  }, [
+    router.pathname,
+    onLogoClick,
+  ]);
+
   const isVisable = state.stuats !== STATUS_CLOSED;
 
   return (
@@ -287,11 +328,7 @@ const Layout = ({
                   <BackButton disabled={!backButton} />
                 </div>
                 <div className="col-8 text-center">
-                  <Link href="/">
-                    <a>
-                      <img src="/img/icon2.svg" alt="chickar.ee" />
-                    </a>
-                  </Link>
+                  {logo}
                 </div>
                 <div className="col-2 text-right">
                   <button type="button" className={menuButtonClassName} title={menuButtonTitle} onClick={handleMenuClick} aria-pressed={[STATUS_OPENING, STATUS_OPEN].includes(state.status) ? true : undefined}>
