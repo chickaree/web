@@ -12,8 +12,6 @@ import {
   map,
   bufferTime,
   filter,
-  debounceTime,
-  tap,
 } from 'rxjs/operators';
 import Link from 'next/link';
 import { DateTime } from 'luxon';
@@ -21,7 +19,7 @@ import useReactor from '@cinematix/reactor';
 import AppContext from '../context/app';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
-import createFetchResourceActivity, { CACHE_FIRST, REVALIDATE, NETWORK_FIRST } from '../utils/fetch/resource-data';
+import createFetchResourceActivity, { CACHE_FIRST, REVALIDATE } from '../utils/fetch/resource-data';
 
 function createFeedStream() {
   const fetchResourceActivity = createFetchResourceActivity();
