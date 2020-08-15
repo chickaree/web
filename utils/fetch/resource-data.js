@@ -2,7 +2,7 @@ import {
   of, EMPTY, from, concat,
 } from 'rxjs';
 import {
-  flatMap, filter, toArray, defaultIfEmpty,
+  flatMap, filter, toArray, defaultIfEmpty, map,
 } from 'rxjs/operators';
 import getResponseData from '../response/data';
 import fetchResource from './resource';
@@ -29,7 +29,24 @@ function createFetchFromCache() {
   );
 }
 
-function createFetchResourceData() {
+function wrapObject(object) {
+  const { type } = object;
+
+  switch (type) {
+    case 'OrderedCollection':
+      return {
+        ...object,
+        orderedItems: (object.orderedItems || []).map((item) => wrapObject(item)),
+      };
+    default:
+      return {
+        type: 'Create',
+        object,
+      };
+  }
+}
+
+function createFetchResourceActivity() {
   const fetchFromCache = createFetchFromCache();
 
   return (resource, cacheStrategy = CACHE_FIRST) => {
@@ -46,6 +63,7 @@ function createFetchResourceData() {
           }),
           filter((response) => !!response || !!response.ok),
           flatMap((response) => getResponseData(response)),
+          map((data) => wrapObject(data)),
         );
       case REVALIDATE:
         return concat(
@@ -63,7 +81,9 @@ function createFetchResourceData() {
             }
 
             if (!cached || !cached.ok) {
-              return getResponseData(current);
+              return from(getResponseData(current)).pipe(
+                map((data) => wrapObject(data)),
+              );
             }
 
             return concat(
@@ -79,7 +99,7 @@ function createFetchResourceData() {
                 // @TODO When this happens, send an Activity to delete certain items.
                 //       in fact, it might be better to only send activity...
 
-                return of(currentData);
+                return of(wrapObject(currentData));
               }),
             );
           }),
@@ -94,6 +114,7 @@ function createFetchResourceData() {
 
             return getResponseData(response);
           }),
+          map((data) => wrapObject(data)),
         );
       default:
         throw new Error('Invalid Cache Strategy');
@@ -101,4 +122,4 @@ function createFetchResourceData() {
   };
 }
 
-export default createFetchResourceData;
+export default createFetchResourceActivity;

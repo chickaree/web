@@ -5,13 +5,15 @@ import {
   useEffect,
   useRef,
 } from 'react';
-import { from, concat } from 'rxjs';
+import { from, concat, fromEvent } from 'rxjs';
 import {
   switchMap,
   flatMap,
   map,
   bufferTime,
   filter,
+  debounceTime,
+  tap,
 } from 'rxjs/operators';
 import Link from 'next/link';
 import { DateTime } from 'luxon';
@@ -19,25 +21,38 @@ import useReactor from '@cinematix/reactor';
 import AppContext from '../context/app';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
-import createFetchResourceData, { CACHE_FIRST, REVALIDATE, NETWORK_FIRST } from '../utils/fetch/resource-data';
+import createFetchResourceActivity, { CACHE_FIRST, REVALIDATE, NETWORK_FIRST } from '../utils/fetch/resource-data';
 
 function createFeedStream() {
-  const fetchResourceData = createFetchResourceData();
+  const fetchResourceActivity = createFetchResourceActivity();
 
   return (feeds, cacheStrategy) => (
     from(feeds).pipe(
-      flatMap((feed) => fetchResourceData(feed, cacheStrategy)),
+      flatMap((feed) => fetchResourceActivity(feed, cacheStrategy)),
       flatMap(({ orderedItems, ...context }) => (
         from(orderedItems || []).pipe(
-          flatMap((item) => (
-            fetchResourceData(
-              item.url.href,
-              cacheStrategy === REVALIDATE ? NETWORK_FIRST : cacheStrategy,
-            ).pipe(
+          flatMap((activity) => {
+            const { object: item } = activity;
+
+            if (activity.type === 'Delete') {
+              return activity;
+            }
+
+            // Activity type is hinted as 'Create' or 'Update'
+            return fetchResourceActivity(item.url.href, cacheStrategy).pipe(
+              // On this page, discard nested OrderedCollections.
               filter(({ type }) => type !== 'OrderedCollection'),
-              map((data) => ({ ...item, ...data, context })),
-            )
-          )),
+              map((act) => ({
+                ...activity,
+                ...act,
+                object: {
+                  ...item,
+                  ...act.object,
+                  context,
+                },
+              })),
+            );
+          }),
         )
       )),
     )
@@ -64,17 +79,9 @@ function feedReactor(value$) {
     // Group by tick.
     bufferTime(0),
     filter((a) => a.length > 0),
-    map((items) => ({
-      type: 'ITEMS_ADD',
-      payload: [...items.reduce((acc, item) => {
-        if (!item) {
-          return acc;
-        }
-
-        acc.set(item.url.href, item);
-
-        return acc;
-      }, new Map()).values()],
+    map((activityStream) => ({
+      type: 'ITEMS_ACTIVITY',
+      payload: activityStream,
     })),
   );
 }
@@ -89,19 +96,55 @@ function getPublishedDateTime(item) {
   return published ? DateTime.fromISO(published) : DateTime.fromMillis(0);
 }
 
+function activityReducer(state, activity) {
+  const { object, type } = activity;
+
+  switch (type) {
+    case 'Create':
+      return [
+        ...state,
+        object,
+      ];
+    case 'Update': {
+      const index = state.findIndex((item) => item.url.href === object.url.href);
+
+      // If the object was not found in the existing collection, then
+      // add it to the list.
+      if (index === -1) {
+        return [
+          ...state,
+          object,
+        ];
+      }
+
+      return [
+        ...state.slice(0, index),
+        object,
+        ...state.slice(index + 1),
+      ];
+    }
+    case 'Delete':
+      return state.filter((item) => item.url.href !== object.url.href);
+    default:
+      throw new Error('Invalid Activity');
+  }
+}
+
+function mapSetReducer(state, item) {
+  state.set(item.url.href, item);
+  return state;
+}
+
+function dedupeItems(items) {
+  return [...items.reduce(mapSetReducer, new Map()).values()];
+}
+
 function reducer(state, action) {
   switch (action.type) {
-    case 'ITEMS_ADD':
+    case 'ITEMS_ACTIVITY':
       return {
         ...state,
-        items: [...[
-          ...state.items,
-          ...action.payload,
-        ].reduce((acc, item) => {
-          acc.set(item.url.href, item);
-
-          return acc;
-        }, new Map()).values()].sort((a, b) => {
+        items: dedupeItems(action.payload.reduce(activityReducer, state.items)).sort((a, b) => {
           const aDateTime = getPublishedDateTime(a);
           const bDateTime = getPublishedDateTime(b);
 
@@ -120,8 +163,9 @@ function Index() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const followingRef = useRef(state.following);
 
-  useReactor(feedReactor, dispatch, [app.following]);
+  const subject = useReactor(feedReactor, dispatch, [app.following]);
 
+  // Update a reference to the current state.
   useEffect(() => {
     followingRef.current = app.following;
   }, [
@@ -129,7 +173,13 @@ function Index() {
   ]);
 
   useEffect(() => {
-    // @TODO Add an event handler for handling when people come back to the page.
+    // Refresh the feed when someone comes back to the tab (if they are scrolled to the top).
+    const obs = fromEvent(document, 'visibilitychange').pipe(
+      filter(() => document.visibilityState === 'visible'),
+      filter(() => window.scrollY === 0),
+    ).subscribe(() => subject.next([followingRef.current]));
+
+    return () => obs.unsubscribe();
   }, []);
 
   const hasFeed = useMemo(() => {
