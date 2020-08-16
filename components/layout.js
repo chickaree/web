@@ -227,20 +227,24 @@ const Layout = ({
   }, []);
 
   const onLogoClick = useCallback(() => {
+    // Before doing anything, scroll to the top of the page to make the site
+    // feel like it's doing something.
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+
     // If the app needs to be updated, do that instead.
     if (autoUpdater()) {
       return;
     }
 
+    // If there is no refresh callback, reload the page instead to force a refresh.
     if (!onRefresh) {
       router.reload();
       return;
     }
 
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
     onRefresh();
   }, [
     router,
