@@ -6,9 +6,11 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useContext,
 } from 'react';
 import { useRouter } from 'next/router';
 import BackButton from './back-button';
+import UpdaterContext from '../context/updater';
 
 const MENU_TOGGLE = 'MENU_TOGGLE';
 const MENU_TRANSITION_COMPLETE = 'MENU_TRANSITION_COMPLETE';
@@ -129,6 +131,7 @@ const Layout = ({
   const [state, dispatch] = useReducer(reducer, initialState);
   const router = useRouter();
   const canvasRef = useRef(undefined);
+  const autoUpdater = useContext(UpdaterContext);
 
   // Update the state when the animation completes.
   useEffect(() => {
@@ -224,8 +227,13 @@ const Layout = ({
   }, []);
 
   const onLogoClick = useCallback(() => {
+    // If the app needs to be updated, do that instead.
+    if (autoUpdater()) {
+      return;
+    }
+
     if (!onRefresh) {
-      window.location.reload();
+      router.reload();
       return;
     }
 
@@ -235,7 +243,9 @@ const Layout = ({
     });
     onRefresh();
   }, [
+    router,
     onRefresh,
+    autoUpdater,
   ]);
 
   const logo = useMemo(() => {
@@ -245,7 +255,7 @@ const Layout = ({
 
     if (router.pathname === '/') {
       return (
-        <button type="button" className="btn btn-link" title="Refresh" onClick={onLogoClick}>
+        <button type="button" className="btn btn-link p-0" title="Refresh" onClick={onLogoClick}>
           {img}
         </button>
       );
@@ -253,7 +263,7 @@ const Layout = ({
 
     return (
       <Link href="/">
-        <a>
+        <a title="Home">
           {img}
         </a>
       </Link>

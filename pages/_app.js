@@ -7,9 +7,11 @@ import {
 import Dexie from 'dexie';
 import { ulid } from 'ulid';
 import { DateTime } from 'luxon';
-import { Workbox } from 'workbox-window';
+import { Workbox, messageSW } from 'workbox-window';
+import { useRouter } from 'next/router';
 import AppContext from '../context/app';
 import '../styles/styles.scss';
+import UpdaterContext from '../context/updater';
 
 const initialState = {
   status: 'init',
@@ -64,7 +66,9 @@ function reducer(state, action) {
 }
 
 function Chickaree({ Component, pageProps }) {
+  const router = useRouter();
   const [state, dispatch] = useReducer(reducer, initialState);
+  const waitingSwRef = useRef();
 
   const dbRef = useRef();
 
@@ -87,23 +91,58 @@ function Chickaree({ Component, pageProps }) {
       dispatch({
         type: 'SERVICEWORKER_READY',
       });
-      return;
+    } else {
+      const wb = new Workbox('/sw.js');
+
+      const handleWaiting = () => {
+        // Register the controlling event to reload the page.
+        wb.addEventListener('controlling', () => {
+          router.reload();
+        });
+      };
+
+      wb.addEventListener('waiting', handleWaiting);
+      wb.addEventListener('externalwaiting', handleWaiting);
+
+      wb.register().then((registration) => {
+        if (registration.waiting) {
+          waitingSwRef.current = registration.waiting;
+        }
+      });
+
+      // Update the status based on the service worker registration.
+      // Without this, the browser may issue a request before we are ready.
+      // Code should wait until either 'ready' or 'sw-ready' before issuing
+      // cross-origin requests.
+      wb.controlling.then(() => {
+        // @TODO Figure out why this isn't good enough! (at least for firefox)
+        dispatch({
+          type: 'SERVICEWORKER_READY',
+        });
+      });
+    }
+  }, []);
+
+  const autoUpdater = useCallback(() => {
+    if (!waitingSwRef.current) {
+      return false;
     }
 
-    const wb = new Workbox('/sw.js');
-    const registration = wb.register();
+    messageSW(waitingSwRef.current, { type: 'SKIP_WAITING' });
+    return true;
+  }, [
+    waitingSwRef,
+  ]);
 
-    // Update the status based on the service worker registration.
-    // Without this, the browser may issue a request before we are ready.
-    // Code should wait until either 'ready' or 'sw-ready' before issuing
-    // cross-origin requests.
-    registration.then(() => {
-      // @TODO Figure out why this isn't good enough! (at least for firefox)
-      dispatch({
-        type: 'SERVICEWORKER_READY',
-      });
-    });
-  }, []);
+  useEffect(() => {
+    router.events.on('routeChangeComplete', autoUpdater);
+
+    return () => {
+      router.events.off('routeChangeComplete', autoUpdater);
+    };
+  }, [
+    autoUpdater,
+  ]);
 
   // Intercept a dispatch and convert it to an action to be saved in IndexedDB.
   const dispatcher = useCallback((action) => {
@@ -150,10 +189,12 @@ function Chickaree({ Component, pageProps }) {
   ]);
 
   return (
-    <AppContext.Provider value={[state, dispatcher]}>
-      {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-      <Component {...pageProps} />
-    </AppContext.Provider>
+    <UpdaterContext.Provider value={autoUpdater}>
+      <AppContext.Provider value={[state, dispatcher]}>
+        {/* eslint-disable-next-line react/jsx-props-no-spreading */}
+        <Component {...pageProps} />
+      </AppContext.Provider>
+    </UpdaterContext.Provider>
   );
 }
 

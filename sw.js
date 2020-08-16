@@ -1,3 +1,4 @@
+import { clientsClaim } from 'workbox-core';
 import { registerRoute } from 'workbox-routing';
 import { precacheAndRoute } from 'workbox-precaching';
 import { encode } from 'base64url';
@@ -7,6 +8,17 @@ import RESOURCE_CACHE from './utils/resource/cache';
 
 // eslint-disable-next-line no-underscore-dangle,no-restricted-globals
 precacheAndRoute(self.__WB_MANIFEST);
+
+// Start controlling the page on the first load.
+clientsClaim();
+
+// eslint-disable-next-line no-restricted-globals
+addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    // eslint-disable-next-line no-restricted-globals
+    self.skipWaiting();
+  }
+});
 
 registerRoute(
   ({ request }) => request.mode === 'cors',

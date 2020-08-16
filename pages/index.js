@@ -21,6 +21,7 @@ import AppContext from '../context/app';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
 import createFetchResourceActivity, { CACHE_FIRST, REVALIDATE } from '../utils/fetch/resource-data';
+import UpdaterContext from '../context/updater';
 
 function createFeedStream() {
   const fetchResourceActivity = createFetchResourceActivity();
@@ -160,13 +161,14 @@ function reducer(state, action) {
 
 function Index() {
   const [app] = useContext(AppContext);
+  const autoUpdater = useContext(UpdaterContext);
   const [state, dispatch] = useReducer(reducer, initialState);
   const followingRef = useRef(app.following);
   const statusRef = useRef(app.status);
 
   const subject = useReactor(feedReactor, dispatch, [
     app.status,
-    app.following
+    app.following,
   ]);
 
   // Update a reference to the current state.
@@ -191,11 +193,19 @@ function Index() {
     const obs = fromEvent(document, 'visibilitychange').pipe(
       filter(() => document.visibilityState === 'visible'),
       filter(() => window.scrollY === 0),
-    ).subscribe(() => refresh());
+    ).subscribe(() => {
+      // If the app needs updating, do that instead.
+      if (autoUpdater()) {
+        return;
+      }
+
+      refresh();
+    });
 
     return () => obs.unsubscribe();
   }, [
     refresh,
+    autoUpdater,
   ]);
 
   const hasFeed = useMemo(() => {
