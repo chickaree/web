@@ -137,6 +137,7 @@ function Chickaree({ Component, pageProps }) {
       router.events.off('routeChangeComplete', autoUpdater);
     };
   }, [
+    router,
     autoUpdater,
   ]);
 
