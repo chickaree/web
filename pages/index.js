@@ -20,7 +20,7 @@ import useReactor from '@cinematix/reactor';
 import AppContext from '../context/app';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
-import createFetchResourceActivity, { CACHE_FIRST, REVALIDATE } from '../utils/fetch/resource-data';
+import createFetchResourceActivity, { CACHE_FIRST, REVALIDATE } from '../utils/fetch/resource-activity';
 import UpdaterContext from '../context/updater';
 
 function createFeedStream() {
@@ -29,8 +29,10 @@ function createFeedStream() {
   return (feeds, cacheStrategy) => (
     from(feeds).pipe(
       flatMap((feed) => fetchResourceActivity(feed, cacheStrategy)),
-      flatMap(({ orderedItems, ...context }) => (
-        from(orderedItems || []).pipe(
+      flatMap(({ object }) => {
+        const { orderedItems, ...context } = object;
+
+        return from(orderedItems || []).pipe(
           flatMap((activity) => {
             const { object: item } = activity;
 
@@ -53,8 +55,8 @@ function createFeedStream() {
               })),
             );
           }),
-        )
-      )),
+        );
+      }),
     )
   );
 }

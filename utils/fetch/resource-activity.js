@@ -35,8 +35,11 @@ function wrapObject(object, activityType = 'Create') {
   switch (type) {
     case 'OrderedCollection':
       return {
-        ...object,
-        orderedItems: (object.orderedItems || []).map((item) => wrapObject(item)),
+        type: activityType,
+        object: {
+          ...object,
+          orderedItems: (object.orderedItems || []).map((item) => wrapObject(item)),
+        },
       };
     default:
       return {
@@ -72,17 +75,23 @@ function createFetchResourceActivity() {
         ).pipe(
           toArray(),
           flatMap(([cached, current]) => {
-            if (!cached && !current) {
+            // If neither the cached or the current version is availble and ok, then nothing can be
+            // done.
+            if ((!cached || !cached.ok) && (!current || !current.ok)) {
               return EMPTY;
             }
 
-            if (!current || !current.ok) {
-              return EMPTY;
-            }
-
+            // If there was no cached object, then we are creating it.
             if (!cached || !cached.ok) {
               return from(getResponseData(current)).pipe(
                 map((data) => wrapObject(data)),
+              );
+            }
+
+            // If the current object is not available, then we are removing it.
+            if (!current || !current.ok) {
+              return from(getResponseData(cached)).pipe(
+                map((data) => wrapObject(data, 'Remove')),
               );
             }
 
@@ -91,11 +100,14 @@ function createFetchResourceActivity() {
               getResponseData(current),
             ).pipe(
               toArray(),
-              filter(([cachedData, currentData]) => {
+              flatMap(([cachedData, currentData]) => {
+                // If they are identical, then we aren't doing anything.
                 if (JSON.stringify(cachedData) === JSON.stringify(currentData)) {
                   return EMPTY;
                 }
 
+                // If the current object is an OrderedCollection, deal with the items inside the
+                // collection, rather than the collection itself
                 if (currentData.type === 'OrderedCollection') {
                   const cachedItems = cachedData.orderedItems || [];
                   const currentItems = currentData.orderedItems || [];
@@ -126,14 +138,17 @@ function createFetchResourceActivity() {
                     ))
                   ));
 
-                  return {
-                    ...currentData,
-                    orderedItems: [
-                      ...create.map((item) => wrapObject(item, 'Create')),
-                      ...update.map((item) => wrapObject(item, 'Update')),
-                      ...remove.map((item) => wrapObject(item, 'Remove')),
-                    ],
-                  };
+                  return of({
+                    type: 'Update',
+                    object: {
+                      ...currentData,
+                      orderedItems: [
+                        ...create.map((item) => wrapObject(item, 'Create')),
+                        ...update.map((item) => wrapObject(item, 'Update')),
+                        ...remove.map((item) => wrapObject(item, 'Remove')),
+                      ],
+                    },
+                  });
                 }
 
                 return of(wrapObject(currentData, 'Update'));
