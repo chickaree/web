@@ -94,9 +94,10 @@ function Chickaree({ Component, pageProps }) {
     } else {
       const wb = new Workbox('/sw.js');
 
-      const handleWaiting = () => {
+      const handleWaiting = ({ sw, target }) => {
+        waitingSwRef.current = sw;
         // Register the controlling event to reload the page.
-        wb.addEventListener('controlling', () => {
+        target.addEventListener('controlling', () => {
           router.reload();
         });
       };
@@ -104,18 +105,13 @@ function Chickaree({ Component, pageProps }) {
       wb.addEventListener('waiting', handleWaiting);
       wb.addEventListener('externalwaiting', handleWaiting);
 
-      wb.register().then((registration) => {
-        if (registration.waiting) {
-          waitingSwRef.current = registration.waiting;
-        }
-      });
+      wb.register();
 
       // Update the status based on the service worker registration.
       // Without this, the browser may issue a request before we are ready.
       // Code should wait until either 'ready' or 'sw-ready' before issuing
       // cross-origin requests.
       wb.controlling.then(() => {
-        // @TODO Figure out why this isn't good enough! (at least for firefox)
         dispatch({
           type: 'SERVICEWORKER_READY',
         });
