@@ -100,10 +100,14 @@ function createFetchResourceActivity() {
                   const cachedItems = cachedData.orderedItems || [];
                   const currentItems = currentData.orderedItems || [];
 
-                  const create = currentItems.filter((currentItem) => !cachedItems.some((cachedItem) => currentItem.url.href === cachedItem.url.href));
+                  const create = currentItems.filter((currentItem) => (
+                    !cachedItems.some((cachedItem) => currentItem.url.href === cachedItem.url.href)
+                  ));
 
                   const update = cachedItems.filter((cachedItem) => {
-                    const currentItem = cachedItems.find((item) => item.url.href === cachedItem.url.href);
+                    const currentItem = cachedItems.find((item) => (
+                      item.url.href === cachedItem.url.href
+                    ));
 
                     if (!currentItem) {
                       return false;
@@ -116,7 +120,11 @@ function createFetchResourceActivity() {
                     return true;
                   });
 
-                  const remove = cachedItems.filter((cachedItem) => !currentItems.some((currentItem) => cachedItem.url.href === currentItem.url.href));
+                  const remove = cachedItems.filter((cachedItem) => (
+                    !currentItems.some((currentItem) => (
+                      cachedItem.url.href === currentItem.url.href
+                    ))
+                  ));
 
                   return {
                     ...currentData,
@@ -125,7 +133,7 @@ function createFetchResourceActivity() {
                       ...update.map((item) => wrapObject(item, 'Update')),
                       ...remove.map((item) => wrapObject(item, 'Remove')),
                     ],
-                  }
+                  };
                 }
 
                 return of(wrapObject(currentData, 'Update'));
