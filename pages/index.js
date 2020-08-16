@@ -6,7 +6,7 @@ import {
   useRef,
   useCallback,
 } from 'react';
-import { from, concat, fromEvent } from 'rxjs';
+import { from, concat, fromEvent, of } from 'rxjs';
 import {
   switchMap,
   flatMap,
@@ -37,7 +37,7 @@ function createFeedStream() {
             const { object: item } = activity;
 
             if (activity.type === 'Remove') {
-              return activity;
+              return of(activity);
             }
 
             // Activity type is hinted as 'Create' or 'Update'
