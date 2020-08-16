@@ -6,7 +6,12 @@ import {
   useRef,
   useCallback,
 } from 'react';
-import { from, concat, fromEvent, of } from 'rxjs';
+import {
+  from,
+  concat,
+  fromEvent,
+  of,
+} from 'rxjs';
 import {
   switchMap,
   flatMap,
