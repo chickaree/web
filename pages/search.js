@@ -179,6 +179,7 @@ function searchReactor(value$) {
 
                         return getResponseData(response);
                       }),
+                      filter(({ type }) => type === 'OrderedCollection'),
                       map((resource) => ({
                         ...resource,
                         position: (index * 1000) + i,

@@ -21,7 +21,7 @@ addEventListener('message', (event) => {
 });
 
 registerRoute(
-  ({ request }) => request.mode === 'cors',
+  ({ request, url }) => (request.mode === 'cors' && !(url.host === 'www.wikidata.org' && url.searchParams.get('origin') === '*')),
   async ({ url, request, event }) => {
     //  Start the cache opening.
     const cacheOpen = caches.open(RESOURCE_CACHE);
