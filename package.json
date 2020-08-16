@@ -20,6 +20,7 @@
     "@cinematix/next-cloudflare": "^1.1.1",
     "@cinematix/reactor": "^2.0.0",
     "base64url": "^3.0.1",
+    "copy-webpack-plugin": "^6.0.3",
     "dexie": "^3.0.1",
     "dompurify": "^2.0.12",
     "jsdom": "^16.2.2",
