@@ -6,9 +6,11 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useContext,
 } from 'react';
 import { useRouter } from 'next/router';
 import BackButton from './back-button';
+import UpdaterContext from '../context/updater';
 
 const MENU_TOGGLE = 'MENU_TOGGLE';
 const MENU_TRANSITION_COMPLETE = 'MENU_TRANSITION_COMPLETE';
@@ -123,11 +125,13 @@ function NavLink({
 
 const Layout = ({
   backButton = false,
+  onRefresh,
   children,
 }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const router = useRouter();
   const canvasRef = useRef(undefined);
+  const autoUpdater = useContext(UpdaterContext);
 
   // Update the state when the animation completes.
   useEffect(() => {
@@ -222,6 +226,57 @@ const Layout = ({
     dispatch({ type: NAVIGATION, payload: e.currentTarget.getAttribute('href') });
   }, []);
 
+  const onLogoClick = useCallback(() => {
+    // Before doing anything, scroll to the top of the page to make the site
+    // feel like it's doing something.
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+
+    // If the app needs to be updated, do that instead.
+    if (autoUpdater()) {
+      return;
+    }
+
+    // If there is no refresh callback, reload the page instead to force a refresh.
+    if (!onRefresh) {
+      router.reload();
+      return;
+    }
+
+    onRefresh();
+  }, [
+    router,
+    onRefresh,
+    autoUpdater,
+  ]);
+
+  const logo = useMemo(() => {
+    const img = (
+      <img src="/img/icon2.svg" alt="chickar.ee" />
+    );
+
+    if (router.pathname === '/') {
+      return (
+        <button type="button" className="btn btn-link p-0" title="Refresh" onClick={onLogoClick}>
+          {img}
+        </button>
+      );
+    }
+
+    return (
+      <Link href="/">
+        <a title="Home">
+          {img}
+        </a>
+      </Link>
+    );
+  }, [
+    router.pathname,
+    onLogoClick,
+  ]);
+
   const isVisable = state.stuats !== STATUS_CLOSED;
 
   return (
@@ -287,11 +342,7 @@ const Layout = ({
                   <BackButton disabled={!backButton} />
                 </div>
                 <div className="col-8 text-center">
-                  <Link href="/">
-                    <a>
-                      <img src="/img/icon2.svg" alt="chickar.ee" />
-                    </a>
-                  </Link>
+                  {logo}
                 </div>
                 <div className="col-2 text-right">
                   <button type="button" className={menuButtonClassName} title={menuButtonTitle} onClick={handleMenuClick} aria-pressed={[STATUS_OPENING, STATUS_OPEN].includes(state.status) ? true : undefined}>

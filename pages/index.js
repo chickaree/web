@@ -2,8 +2,11 @@ import {
   useContext,
   useReducer,
   useMemo,
+  useEffect,
+  useRef,
+  useCallback,
 } from 'react';
-import { from } from 'rxjs';
+import { from, concat, fromEvent } from 'rxjs';
 import {
   switchMap,
   flatMap,
@@ -15,44 +18,73 @@ import Link from 'next/link';
 import { DateTime } from 'luxon';
 import useReactor from '@cinematix/reactor';
 import AppContext from '../context/app';
-import fetchResource from '../utils/fetch-resource';
-import getResponseData from '../utils/response/data';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
+import createFetchResourceActivity, { CACHE_FIRST, REVALIDATE } from '../utils/fetch/resource-activity';
+import UpdaterContext from '../context/updater';
+
+function createFeedStream() {
+  const fetchResourceActivity = createFetchResourceActivity();
+
+  return (feeds, cacheStrategy) => (
+    from(feeds).pipe(
+      flatMap((feed) => fetchResourceActivity(feed, cacheStrategy)),
+      flatMap(({ object }) => {
+        const { orderedItems, ...context } = object;
+
+        return from(orderedItems || []).pipe(
+          flatMap((activity) => {
+            const { object: item } = activity;
+
+            if (activity.type === 'Remove') {
+              return activity;
+            }
+
+            // Activity type is hinted as 'Create' or 'Update'
+            return fetchResourceActivity(item.url.href, cacheStrategy).pipe(
+              // On this page, discard nested OrderedCollections.
+              filter(({ type }) => type !== 'OrderedCollection'),
+              map((act) => ({
+                ...activity,
+                ...act,
+                object: {
+                  ...item,
+                  ...act.object,
+                  context,
+                },
+              })),
+            );
+          }),
+        );
+      }),
+    )
+  );
+}
 
 function feedReactor(value$) {
+  const feedStream = createFeedStream();
+
   return value$.pipe(
-    map(([feeds]) => feeds),
-    switchMap((feeds) => from(feeds)),
-    flatMap((feed) => fetchResource(feed)),
-    filter((response) => !!response.ok),
-    flatMap((response) => getResponseData(response)),
-    flatMap(({ orderedItems, ...context }) => (
-      from(orderedItems || []).pipe(
-        flatMap((item) => (
-          fetchResource(item.url.href).pipe(
-            filter((response) => !!response.ok),
-            flatMap((response) => getResponseData(response)),
-            filter(({ type }) => type !== 'OrderedCollection'),
-            map((data) => ({ ...item, ...data, context })),
-          )
-        )),
-      )
-    )),
+    map(([status, feeds]) => ({ status, feeds })),
+    filter(({ status }) => status === 'ready'),
+    filter(({ feeds }) => feeds.length > 0),
+    switchMap(({ feeds }, index) => {
+      if (index === 0) {
+        return concat(
+          feedStream(feeds, CACHE_FIRST),
+          feedStream(feeds, REVALIDATE),
+        );
+      }
+
+
+      return feedStream(feeds, REVALIDATE);
+    }),
     // Group by tick.
     bufferTime(0),
     filter((a) => a.length > 0),
-    map((items) => ({
-      type: 'ITEMS_ADD',
-      payload: [...items.reduce((acc, item) => {
-        if (!item) {
-          return acc;
-        }
-
-        acc.set(item.url.href, item);
-
-        return acc;
-      }, new Map()).values()],
+    map((activityStream) => ({
+      type: 'ITEMS_ACTIVITY',
+      payload: activityStream,
     })),
   );
 }
@@ -67,19 +99,55 @@ function getPublishedDateTime(item) {
   return published ? DateTime.fromISO(published) : DateTime.fromMillis(0);
 }
 
+function activityReducer(state, activity) {
+  const { object, type } = activity;
+
+  switch (type) {
+    case 'Create':
+      return [
+        ...state,
+        object,
+      ];
+    case 'Update': {
+      const index = state.findIndex((item) => item.url.href === object.url.href);
+
+      // If the object was not found in the existing collection, then
+      // add it to the list.
+      if (index === -1) {
+        return [
+          ...state,
+          object,
+        ];
+      }
+
+      return [
+        ...state.slice(0, index),
+        object,
+        ...state.slice(index + 1),
+      ];
+    }
+    case 'Remove':
+      return state.filter((item) => item.url.href !== object.url.href);
+    default:
+      throw new Error('Invalid Activity');
+  }
+}
+
+function mapSetReducer(state, item) {
+  state.set(item.url.href, item);
+  return state;
+}
+
+function dedupeItems(items) {
+  return [...items.reduce(mapSetReducer, new Map()).values()];
+}
+
 function reducer(state, action) {
   switch (action.type) {
-    case 'ITEMS_ADD':
+    case 'ITEMS_ACTIVITY':
       return {
         ...state,
-        items: [...[
-          ...state.items,
-          ...action.payload,
-        ].reduce((acc, item) => {
-          acc.set(item.url.href, item);
-
-          return acc;
-        }, new Map()).values()].sort((a, b) => {
+        items: dedupeItems(action.payload.reduce(activityReducer, state.items)).sort((a, b) => {
           const aDateTime = getPublishedDateTime(a);
           const bDateTime = getPublishedDateTime(b);
 
@@ -95,12 +163,55 @@ function reducer(state, action) {
 
 function Index() {
   const [app] = useContext(AppContext);
+  const autoUpdater = useContext(UpdaterContext);
   const [state, dispatch] = useReducer(reducer, initialState);
+  const followingRef = useRef(app.following);
+  const statusRef = useRef(app.status);
 
-  useReactor(feedReactor, dispatch, [app.following]);
+  const subject = useReactor(feedReactor, dispatch, [
+    app.status,
+    app.following,
+  ]);
+
+  // Update a reference to the current state.
+  useEffect(() => {
+    followingRef.current = app.following;
+    statusRef.current = app.status;
+  }, [
+    app.following,
+    app.status,
+  ]);
+
+  const refresh = useCallback(() => {
+    subject.next([statusRef.current, followingRef.current]);
+  }, [
+    subject,
+    followingRef,
+    statusRef,
+  ]);
+
+  useEffect(() => {
+    // Refresh the feed when someone comes back to the tab (if they are scrolled to the top).
+    const obs = fromEvent(document, 'visibilitychange').pipe(
+      filter(() => document.visibilityState === 'visible'),
+      filter(() => window.scrollY === 0),
+    ).subscribe(() => {
+      // If the app needs updating, do that instead.
+      if (autoUpdater()) {
+        return;
+      }
+
+      refresh();
+    });
+
+    return () => obs.unsubscribe();
+  }, [
+    refresh,
+    autoUpdater,
+  ]);
 
   const hasFeed = useMemo(() => {
-    if (app.status === 'init') {
+    if (app.status !== 'ready') {
       return true;
     }
 
@@ -148,7 +259,7 @@ function Index() {
   }
 
   return (
-    <Layout>
+    <Layout onRefresh={refresh}>
       <div className="container pt-5">
         <div className="row">
           <div className="mt-3 col-lg-8 offset-lg-2 col">

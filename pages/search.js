@@ -14,7 +14,7 @@ import {
 } from 'rxjs/operators';
 import { fromFetch } from 'rxjs/fetch';
 import Layout from '../components/layout';
-import fetchResource from '../utils/fetch-resource';
+import fetchResource from '../utils/fetch/resource';
 import getResponseData from '../utils/response/data';
 import MIME_TYPES from '../utils/mime-types';
 import Item from '../components/card/item';
@@ -73,6 +73,7 @@ function searchReactor(value$) {
       try {
         const url = new URL(v);
         return fetchResource(url).pipe(
+          filter((response) => !response || !response.ok),
           flatMap((response) => getResponseData(response)),
           map((resource) => ({
             type: RESOURCES_SET,
@@ -172,7 +173,7 @@ function searchReactor(value$) {
                   flatMap((url, i) => (
                     fetchResource(url).pipe(
                       flatMap((response) => {
-                        if (!response.ok) {
+                        if (!response || !response.ok) {
                           return EMPTY;
                         }
 

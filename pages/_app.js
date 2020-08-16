@@ -7,8 +7,11 @@ import {
 import Dexie from 'dexie';
 import { ulid } from 'ulid';
 import { DateTime } from 'luxon';
+import { Workbox, messageSW } from 'workbox-window';
+import { useRouter } from 'next/router';
 import AppContext from '../context/app';
 import '../styles/styles.scss';
+import UpdaterContext from '../context/updater';
 
 const initialState = {
   status: 'init',
@@ -36,10 +39,10 @@ async function loadFollowing(db) {
 
 function reducer(state, action) {
   switch (action.type) {
-    case 'FOLLOW_MULTIPLE':
+    case 'DB_READY':
       return {
         ...state,
-        status: 'ready',
+        status: state.status === 'sw-ready' ? 'ready' : 'db-ready',
         following: [...new Set([...state.following, ...action.payload])],
       };
     case 'FOLLOW':
@@ -52,13 +55,20 @@ function reducer(state, action) {
         ...state,
         following: state.following.filter((href) => href !== action.payload),
       };
+    case 'SERVICEWORKER_READY':
+      return {
+        ...state,
+        status: state.status === 'db-ready' ? 'ready' : 'sw-ready',
+      };
     default:
       throw new Error('Unkown Action');
   }
 }
 
 function Chickaree({ Component, pageProps }) {
+  const router = useRouter();
   const [state, dispatch] = useReducer(reducer, initialState);
+  const waitingSwRef = useRef();
 
   const dbRef = useRef();
 
@@ -71,11 +81,64 @@ function Chickaree({ Component, pageProps }) {
 
     loadFollowing(db).then((feeds) => {
       dispatch({
-        type: 'FOLLOW_MULTIPLE',
+        type: 'DB_READY',
         payload: feeds,
       });
     });
+
+    // No service worker in dev, fake it.
+    if (process.env.DEV) {
+      dispatch({
+        type: 'SERVICEWORKER_READY',
+      });
+    } else {
+      const wb = new Workbox('/sw.js');
+
+      const handleWaiting = ({ sw, target }) => {
+        waitingSwRef.current = sw;
+        // Register the controlling event to reload the page.
+        target.addEventListener('controlling', () => {
+          router.reload();
+        });
+      };
+
+      wb.addEventListener('waiting', handleWaiting);
+      wb.addEventListener('externalwaiting', handleWaiting);
+
+      wb.register();
+
+      // Update the status based on the service worker registration.
+      // Without this, the browser may issue a request before we are ready.
+      // Code should wait until either 'ready' or 'sw-ready' before issuing
+      // cross-origin requests.
+      wb.controlling.then(() => {
+        dispatch({
+          type: 'SERVICEWORKER_READY',
+        });
+      });
+    }
   }, []);
+
+  const autoUpdater = useCallback(() => {
+    if (!waitingSwRef.current) {
+      return false;
+    }
+
+    messageSW(waitingSwRef.current, { type: 'SKIP_WAITING' });
+    return true;
+  }, [
+    waitingSwRef,
+  ]);
+
+  useEffect(() => {
+    router.events.on('routeChangeComplete', autoUpdater);
+
+    return () => {
+      router.events.off('routeChangeComplete', autoUpdater);
+    };
+  }, [
+    autoUpdater,
+  ]);
 
   // Intercept a dispatch and convert it to an action to be saved in IndexedDB.
   const dispatcher = useCallback((action) => {
@@ -122,10 +185,12 @@ function Chickaree({ Component, pageProps }) {
   ]);
 
   return (
-    <AppContext.Provider value={[state, dispatcher]}>
-      {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-      <Component {...pageProps} />
-    </AppContext.Provider>
+    <UpdaterContext.Provider value={autoUpdater}>
+      <AppContext.Provider value={[state, dispatcher]}>
+        {/* eslint-disable-next-line react/jsx-props-no-spreading */}
+        <Component {...pageProps} />
+      </AppContext.Provider>
+    </UpdaterContext.Provider>
   );
 }
 
