@@ -21,8 +21,16 @@ addEventListener('message', (event) => {
   }
 });
 
+function isSearch(url) {
+  return (
+    url.host === 'www.wikidata.org'
+    && url.searchParams.get('origin') === '*'
+    && ['query', 'wbgetclaims'].includes(url.searchParams.get('action'))
+  );
+}
+
 registerRoute(
-  ({ request, url }) => (request.mode === 'cors' && !(url.host === 'www.wikidata.org' && url.searchParams.get('origin') === '*')),
+  ({ request, url }) => (request.mode === 'cors' && !isSearch(url)),
   async ({ url, request, event }) => {
     //  Start the cache opening.
     const cacheOpen = caches.open(RESOURCE_CACHE);
@@ -74,6 +82,6 @@ registerRoute(
 );
 
 registerRoute(
-  ({ request, url }) => (request.mode === 'navigate' || (url.host === 'www.wikidata.org' && url.searchParams.get('origin') === '*')),
+  ({ request, url }) => (request.mode === 'navigate' || isSearch(url)),
   new NetworkFirst(),
 );
