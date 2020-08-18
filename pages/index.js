@@ -191,22 +191,6 @@ function Index() {
     autoUpdater,
   ]);
 
-  const hasFeed = useMemo(() => {
-    if (!['ready', 'db-ready'].includes(app.status)) {
-      return true;
-    }
-
-    if (app.following.length > 0) {
-      return true;
-    }
-
-    return false;
-  }, [
-    app.status,
-    app.following,
-  ]);
-
-
   const items = useMemo(() => {
     // @TODO Keep "today" in state.
     const now = DateTime.local();
@@ -222,7 +206,7 @@ function Index() {
     state.items,
   ]);
 
-  if (!hasFeed) {
+  if (['ready', 'db-ready'].includes(app.status) && app.following.length === 0) {
     return (
       <Layout>
         <div className="container min-vh-100">
