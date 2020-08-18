@@ -65,7 +65,7 @@ function createFetchResourceActivity() {
 
             return of(response);
           }),
-          filter((response) => !!response || !!response.ok),
+          filter((response) => response && response.ok),
           flatMap((response) => getResponseData(response)),
           map((data) => wrapObject(data)),
         );
