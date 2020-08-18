@@ -48,7 +48,7 @@ function createFeedStream() {
             // Activity type is hinted as 'Create' or 'Update'
             return fetchResourceActivity(item.url.href, cacheStrategy).pipe(
               // On this page, discard nested OrderedCollections.
-              filter(({ type }) => type !== 'OrderedCollection'),
+              filter((act) => act.object.type !== 'OrderedCollection'),
               map((act) => ({
                 ...activity,
                 ...act,
