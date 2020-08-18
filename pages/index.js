@@ -27,6 +27,7 @@ import Layout from '../components/layout';
 import Item from '../components/card/item';
 import createFetchResourceActivity, { CACHE_FIRST, REVALIDATE } from '../utils/fetch/resource-activity';
 import UpdaterContext from '../context/updater';
+import itemArrayToMap from '../utils/item-array-map';
 
 function createFeedStream() {
   const fetchResourceActivity = createFetchResourceActivity();
@@ -104,47 +105,20 @@ function getPublishedDateTime(item) {
   return published ? DateTime.fromISO(published) : DateTime.fromMillis(0);
 }
 
+// @TODO How should we deal with items that don't have a URL?
 function activityReducer(state, activity) {
   const { object, type } = activity;
 
   switch (type) {
     case 'Create':
-      return [
-        ...state,
-        object,
-      ];
-    case 'Update': {
-      const index = state.findIndex((item) => item.url.href === object.url.href);
-
-      // If the object was not found in the existing collection, then
-      // add it to the list.
-      if (index === -1) {
-        return [
-          ...state,
-          object,
-        ];
-      }
-
-      return [
-        ...state.slice(0, index),
-        object,
-        ...state.slice(index + 1),
-      ];
-    }
+    case 'Update':
+      return state.set(object.url.href, object);
     case 'Remove':
-      return state.filter((item) => item.url.href !== object.url.href);
+      state.delete(object.url.href);
+      return state;
     default:
       throw new Error('Invalid Activity');
   }
-}
-
-function mapSetReducer(state, item) {
-  state.set(item.url.href, item);
-  return state;
-}
-
-function dedupeItems(items) {
-  return [...items.reduce(mapSetReducer, new Map()).values()];
 }
 
 function reducer(state, action) {
@@ -152,7 +126,9 @@ function reducer(state, action) {
     case 'ITEMS_ACTIVITY':
       return {
         ...state,
-        items: dedupeItems(action.payload.reduce(activityReducer, state.items)).sort((a, b) => {
+        items: [
+          ...action.payload.reduce(activityReducer, itemArrayToMap(state.items)).values(),
+        ].sort((a, b) => {
           const aDateTime = getPublishedDateTime(a);
           const bDateTime = getPublishedDateTime(b);
 

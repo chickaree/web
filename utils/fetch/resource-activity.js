@@ -7,6 +7,7 @@ import {
 import getResponseData from '../response/data';
 import fetchResource from './resource';
 import RESOURCE_CACHE from '../resource/cache';
+import itemArrayToMap from '../item-array-map';
 
 // Retrieve cached version, or network version on failure.
 export const CACHE_FIRST = 'CACHE_FIRST';
@@ -109,17 +110,15 @@ function createFetchResourceActivity() {
                 // If the current object is an OrderedCollection, deal with the items inside the
                 // collection, rather than the collection itself
                 if (currentData.type === 'OrderedCollection') {
-                  const cachedItems = cachedData.orderedItems || [];
-                  const currentItems = currentData.orderedItems || [];
+                  const cachedItems = itemArrayToMap(cachedData.orderedItems || []);
+                  const currentItems = itemArrayToMap(currentData.orderedItems || []);
 
-                  const create = currentItems.filter((currentItem) => (
-                    !cachedItems.some((cachedItem) => currentItem.url.href === cachedItem.url.href)
+                  const create = [...currentItems.values()].filter((currentItem) => (
+                    !cachedItems.has(currentItem.url.href)
                   ));
 
-                  const update = cachedItems.filter((cachedItem) => {
-                    const currentItem = cachedItems.find((item) => (
-                      item.url.href === cachedItem.url.href
-                    ));
+                  const update = [...cachedItems.values()].filter((cachedItem) => {
+                    const currentItem = currentItems.get(cachedItem.url.href);
 
                     if (!currentItem) {
                       return false;
@@ -132,10 +131,8 @@ function createFetchResourceActivity() {
                     return true;
                   });
 
-                  const remove = cachedItems.filter((cachedItem) => (
-                    !currentItems.some((currentItem) => (
-                      cachedItem.url.href === currentItem.url.href
-                    ))
+                  const remove = [...cachedItems.values()].filter((cachedItem) => (
+                    !currentItems.has(cachedItem.url.href)
                   ));
 
                   return of({
