@@ -1,6 +1,7 @@
 import { clientsClaim } from 'workbox-core';
 import { registerRoute } from 'workbox-routing';
 import { precacheAndRoute } from 'workbox-precaching';
+import { NetworkFirst } from 'workbox-strategies';
 import { encode } from 'base64url';
 import getMimeType from './utils/mime-type';
 import MIME_TYPES from './utils/mime-types';
@@ -70,4 +71,9 @@ registerRoute(
       }
     }
   },
+);
+
+registerRoute(
+  ({ request, url }) => (request.mode === 'navigate' || (url.host === 'www.wikidata.org' && url.searchParams.get('origin') === '*')),
+  new NetworkFirst(),
 );

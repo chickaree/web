@@ -130,16 +130,18 @@ function Chickaree({ Component, pageProps }) {
     waitingSwRef,
   ]);
 
-  useEffect(() => {
-    router.events.on('routeChangeComplete', autoUpdater);
+  // @TODO This is a good idea in theory, but in practice it refreshes the page when the user is
+  //       still typing in the search box. :(
+  // useEffect(() => {
+  //   router.events.on('routeChangeComplete', autoUpdater);
 
-    return () => {
-      router.events.off('routeChangeComplete', autoUpdater);
-    };
-  }, [
-    router,
-    autoUpdater,
-  ]);
+  //   return () => {
+  //     router.events.off('routeChangeComplete', autoUpdater);
+  //   };
+  // }, [
+  //   router,
+  //   autoUpdater,
+  // ]);
 
   // Intercept a dispatch and convert it to an action to be saved in IndexedDB.
   const dispatcher = useCallback((action) => {
