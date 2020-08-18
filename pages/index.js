@@ -192,7 +192,7 @@ function Index() {
   ]);
 
   const hasFeed = useMemo(() => {
-    if (app.status !== 'ready') {
+    if (!['ready', 'db-ready'].includes(app.status)) {
       return true;
     }
 
