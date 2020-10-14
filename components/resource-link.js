@@ -8,7 +8,7 @@ function ResourceLink({
   const { as, href } = getResourceLinkData(resource);
 
   return (
-    <Link as={as} href={href}>
+    <Link as={as} href={href} prefetch={false}>
       {children}
     </Link>
   );
