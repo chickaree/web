@@ -51,7 +51,7 @@ function fetchResource(resource, init = {}) {
           }),
           catchError(() => (
             // If the main request fails, attempt to use the cache.
-            from(resourceCache.then((cache) => cache.get(url)))
+            from(resourceCache.then((cache) => cache.match(url)))
           )),
         );
       }),
@@ -71,7 +71,7 @@ function fetchResource(resource, init = {}) {
           }),
           catchError(() => (
             // If the main request fails, attempt to use the cache.
-            from(resourceCache.then((cache) => cache.get(url)))
+            from(resourceCache.then((cache) => cache.match(url)))
           )),
         );
       }),
