@@ -72,7 +72,7 @@ function DatePublished({
   let time = dt.toLocaleString(format);
 
   // If the resource can be handled provide a permalink.
-  if (link && link.mediaType && MIME_TYPES.includes(link.mediaType)) {
+  if (link && link.mediaType && MIME_TYPES.has(link.mediaType)) {
     time = (
       <ResourceLink resource={link.href}>
         <a>

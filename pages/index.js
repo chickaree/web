@@ -206,7 +206,7 @@ function Index() {
     state.items,
   ]);
 
-  if (['ready', 'db-ready'].includes(app.status) && app.following.length === 0) {
+  if (app.status === 'ready' && app.following.length === 0) {
     return (
       <Layout>
         <div className="container min-vh-100">

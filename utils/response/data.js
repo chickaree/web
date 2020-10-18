@@ -22,7 +22,7 @@ async function getResponseData(response) {
     };
   }
 
-  if (!MIME_TYPES.includes(mimeType)) {
+  if (!MIME_TYPES.has(mimeType)) {
     return {
       type: 'Object',
       url: {

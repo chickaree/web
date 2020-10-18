@@ -213,7 +213,7 @@ function Collection({
     state.items.reduce((acc, { data }) => {
       if (data.type === 'OrderedCollection') {
         // Exclude feeds that are not a mediaType that we can handle.
-        if (!MIME_TYPES.includes(data.url.mediaType)) {
+        if (!MIME_TYPES.has(data.url.mediaType)) {
           return acc;
         }
 

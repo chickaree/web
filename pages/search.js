@@ -258,7 +258,7 @@ function Search() {
     state.resources.reduce((acc, resource) => {
       if (resource.type === 'OrderedCollection') {
         // Exclude collections that cannot be handled.
-        if (MIME_TYPES.includes(resource.url.mediaType)) {
+        if (MIME_TYPES.has(resource.url.mediaType)) {
           acc.collections = [
             ...acc.collections,
             resource,

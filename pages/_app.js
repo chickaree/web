@@ -42,7 +42,7 @@ function reducer(state, action) {
     case 'DB_READY':
       return {
         ...state,
-        status: state.status === 'sw-ready' ? 'ready' : 'db-ready',
+        status: 'ready',
         following: [...new Set([...state.following, ...action.payload])],
       };
     case 'FOLLOW':
@@ -54,11 +54,6 @@ function reducer(state, action) {
       return {
         ...state,
         following: state.following.filter((href) => href !== action.payload),
-      };
-    case 'SERVICEWORKER_READY':
-      return {
-        ...state,
-        status: state.status === 'db-ready' ? 'ready' : 'sw-ready',
       };
     default:
       throw new Error('Unkown Action');
@@ -86,12 +81,8 @@ function Chickaree({ Component, pageProps }) {
       });
     });
 
-    // No service worker in dev, fake it.
-    if (process.env.DEV) {
-      dispatch({
-        type: 'SERVICEWORKER_READY',
-      });
-    } else {
+    // Do not register the service worker in development.
+    if (!process.env.DEV) {
       const wb = new Workbox('/sw.js');
 
       const handleWaiting = ({ sw, target }) => {
@@ -106,16 +97,6 @@ function Chickaree({ Component, pageProps }) {
       wb.addEventListener('externalwaiting', handleWaiting);
 
       wb.register();
-
-      // Update the status based on the service worker registration.
-      // Without this, the browser may issue a request before we are ready.
-      // Code should wait until either 'ready' or 'sw-ready' before issuing
-      // cross-origin requests.
-      wb.controlling.then(() => {
-        dispatch({
-          type: 'SERVICEWORKER_READY',
-        });
-      });
     }
   }, []);
 
