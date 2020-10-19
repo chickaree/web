@@ -13,7 +13,6 @@ import {
   of,
 } from 'rxjs';
 import {
-  switchMap,
   flatMap,
   map,
   bufferTime,
@@ -29,12 +28,14 @@ import createFetchResourceActivity, { CACHE_FIRST, REVALIDATE } from '../utils/f
 import UpdaterContext from '../context/updater';
 import itemArrayToMap from '../utils/item-array-map';
 
+const CONCURRENCY = 10;
+
 function createFeedStream() {
   const fetchResourceActivity = createFetchResourceActivity();
 
   return (feeds, cacheStrategy) => (
     from(feeds).pipe(
-      flatMap((feed) => fetchResourceActivity(feed, cacheStrategy)),
+      flatMap((feed) => fetchResourceActivity(feed, cacheStrategy), CONCURRENCY),
       flatMap(({ object }) => {
         const { orderedItems, ...context } = object;
 
@@ -60,7 +61,7 @@ function createFeedStream() {
                 },
               })),
             );
-          }),
+          }, CONCURRENCY),
         );
       }),
     )
@@ -74,7 +75,7 @@ function feedReactor(value$) {
     map(([status, feeds]) => ({ status, feeds })),
     filter(({ status }) => status === 'ready'),
     filter(({ feeds }) => feeds.length > 0),
-    switchMap(({ feeds }, index) => {
+    flatMap(({ feeds }, index) => {
       if (index === 0) {
         return concat(
           feedStream(feeds, CACHE_FIRST),

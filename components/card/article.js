@@ -12,7 +12,7 @@ function Image({ href, src, alt }) {
 
   return (
     <div className="embed-responsive embed-responsive-16by9">
-      <a href={href}>
+      <a href={href} target="_blank" rel="noopener noreferrer">
         <img src={src} alt={alt} className="embed-responsive-item" loading="lazy" />
       </a>
     </div>
@@ -143,7 +143,7 @@ function Article({
       <Image href={url.href} src={getLinkHref(image)} alt={name} />
       <div className="card-body">
         <h4 className="card-title">
-          <a href={url.href}>{name}</a>
+          <a href={url.href} target="_blank" rel="noopener noreferrer">{name}</a>
         </h4>
         <Description text={summary} />
       </div>

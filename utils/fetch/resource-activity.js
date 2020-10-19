@@ -76,7 +76,7 @@ function createFetchResourceActivity() {
         ).pipe(
           toArray(),
           flatMap(([cached, current]) => {
-            // If neither the cached or the current version is availble and ok, then nothing can be
+            // If neither the cached or the current version is available and ok, then nothing can be
             // done.
             if ((!cached || !cached.ok) && (!current || !current.ok)) {
               return EMPTY;
