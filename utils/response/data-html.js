@@ -5,7 +5,6 @@ import jsonldFrame from '../jsonld-frame';
 import toArray from '../to-array';
 import { Article, WebPage, ItemList } from '../../tree/schema';
 import getImageObj from '../image-obj';
-import objectUri from '../object-uri';
 import hashUri from '../hash-uri';
 // import fetchResource from '../fetch-resource';
 
