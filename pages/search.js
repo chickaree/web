@@ -298,10 +298,10 @@ function Search() {
               </div>
             </form>
             {collections.map((item) => (
-              <Item key={item.url.href} resource={item} />
+              <Item key={item.id} resource={item} />
             ))}
             {items.map((item) => (
-              <Item key={item.url.href} resource={item} />
+              <Item key={item.id} resource={item} />
             ))}
           </div>
         </div>

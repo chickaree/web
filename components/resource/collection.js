@@ -278,10 +278,10 @@ function Collection({
             <div className="row">
               <div className="collection col">
                 {feeds.map((feed) => (
-                  <Item key={feed.url.href} resource={feed} />
+                  <Item key={feed.id} resource={feed} />
                 ))}
                 {entities.map((item) => (
-                  <Item key={item.url.href} resource={item} />
+                  <Item key={item.id} resource={item} />
                 ))}
               </div>
             </div>

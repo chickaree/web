@@ -2,6 +2,7 @@ import { DateTime } from 'luxon';
 import createQueryText from '../query-text';
 import getImageObj from '../image-obj';
 import createQueryAttribute from '../query-attr';
+import objectUri from '../object-uri';
 
 class XMLTypeError extends Error {
   constructor(url, document) {
@@ -19,6 +20,7 @@ async function getResponseDataXML(url, doc) {
     const items = [...(doc.querySelectorAll('item').values())];
 
     return {
+      id: url.toString(),
       type: 'OrderedCollection',
       name: text('channel > title'),
       url: {
@@ -35,9 +37,12 @@ async function getResponseDataXML(url, doc) {
         const link = itemText('link');
         const href = link ? (new URL(link, url)).toString() : undefined;
 
+        const name = itemText('title');
+
         return {
+          id: href || objectUri(name),
           type: 'Object',
-          name: itemText('title'),
+          name,
           published: pubDate ? DateTime.fromRFC2822(pubDate).toUTC().toISO() : undefined,
           url: href ? {
             type: 'Link',
@@ -53,6 +58,7 @@ async function getResponseDataXML(url, doc) {
     const items = [...(doc.querySelectorAll('entry').values())];
 
     return {
+      id: url.toString(),
       type: 'OrderedCollection',
       name: text(':root > title'),
       url: {
@@ -70,10 +76,12 @@ async function getResponseDataXML(url, doc) {
         const updated = itemText('updated');
         const link = itemAttribute('link', 'href');
         const href = link ? (new URL(link, url)).toString() : undefined;
+        const name = itemText('title');
 
         return {
+          id: href || objectUri(name),
           type: 'Object',
-          name: itemText('title'),
+          name,
           published: published ? DateTime.fromISO(published).toUTC().toISO() : undefined,
           updated: updated ? DateTime.fromISO(updated).toUTC().toISO() : undefined,
           url: href ? {

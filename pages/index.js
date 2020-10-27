@@ -106,16 +106,15 @@ function getPublishedDateTime(item) {
   return published ? DateTime.fromISO(published) : DateTime.fromMillis(0);
 }
 
-// @TODO How should we deal with items that don't have a URL?
 function activityReducer(state, activity) {
   const { object, type } = activity;
 
   switch (type) {
     case 'Create':
     case 'Update':
-      return state.set(object.url.href, object);
+      return state.set(object.id, object);
     case 'Remove':
-      state.delete(object.url.href);
+      state.delete(object.id);
       return state;
     default:
       throw new Error('Invalid Activity');
@@ -230,7 +229,7 @@ function Index() {
         <div className="row">
           <div className="mt-3 col-lg-8 offset-lg-2 col">
             {items.map((item) => (
-              <Item key={item.url.href} resource={item} />
+              <Item key={item.id} resource={item} />
             ))}
           </div>
         </div>

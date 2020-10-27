@@ -70,8 +70,20 @@ function Chickaree({ Component, pageProps }) {
   useEffect(() => {
     const db = new Dexie('Chickaree');
     db.version(1).stores({
+      // @TODO We should remove the auto-incrementing when Dexie supports it.
       activity: '++id, type, published, object.id, object.type, object.href',
     });
+
+    db.version(2).stores({
+      // Add feed store.
+      feed: 'id, published, url.href, context.url.href',
+    }).upgrade((transaction) => (
+      transaction.activity.toCollection().modify((activity) => {
+        // Change published from ISO string to JS Date.
+        // eslint-disable-next-line no-param-reassign
+        activity.published = DateTime.fromISO(activity.published).utc().toJSDate();
+      })
+    ));
     dbRef.current = db;
 
     loadFollowing(db).then((feeds) => {
@@ -134,7 +146,7 @@ function Chickaree({ Component, pageProps }) {
 
     if (['FOLLOW', 'UNFOLLOW'].includes(action.type)) {
       const id = `https://chickar.ee/activity/${ulid().toLowerCase()}`;
-      const published = DateTime.utc().toISO();
+      const published = DateTime.utc().toJSDate();
 
       if (action.type === 'FOLLOW') {
         db.activity.add({

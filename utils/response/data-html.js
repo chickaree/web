@@ -5,6 +5,8 @@ import jsonldFrame from '../jsonld-frame';
 import toArray from '../to-array';
 import { Article, WebPage, ItemList } from '../../tree/schema';
 import getImageObj from '../image-obj';
+import objectUri from '../object-uri';
+import hashUri from '../hash-uri';
 // import fetchResource from '../fetch-resource';
 
 function intersection(a, b) {
@@ -75,6 +77,7 @@ async function getResponseDataHTML(url, doc) {
   const text = createQueryText(head);
 
   const obj = {
+    id: url.toString(),
     url: {
       type: 'Link',
       href: url.toString(),
@@ -177,6 +180,7 @@ async function getResponseDataHTML(url, doc) {
         mainCreativeWork = data;
         if (data.mainEntity) {
           obj.orderedItems = toArray(data.mainEntity.itemListElement || []).map((item) => ({
+            id: item.url || hashUri(item),
             type: 'Object',
             url: item.url ? {
               type: 'Link',
@@ -190,6 +194,7 @@ async function getResponseDataHTML(url, doc) {
         obj.type = 'OrderedCollection';
         // @TODO handle embeded items?
         obj.orderedItems = toArray(data.itemListElement || []).map((item) => ({
+          id: item.url || hashUri(item),
           type: 'Object',
           url: item.url ? {
             type: 'Link',
@@ -370,15 +375,20 @@ async function getResponseDataHTML(url, doc) {
         ];
       }, [])
       .sort((a, b) => a.order - b.order)
-      .map(({ link }) => ({
-        type: 'Object',
-        name: link.getAttribute('title'),
-        url: {
-          type: 'Link',
-          href: (new URL(link.getAttribute('href'), url)).toString(),
-          mediaType: link.getAttribute('type'),
-        },
-      }));
+      .map(({ link }) => {
+        const href = (new URL(link.getAttribute('href'), url)).toString();
+
+        return {
+          id: href,
+          type: 'Object',
+          name: link.getAttribute('title'),
+          url: {
+            type: 'Link',
+            href: (new URL(link.getAttribute('href'), url)).toString(),
+            mediaType: link.getAttribute('type'),
+          },
+        };
+      });
 
     if (feeds.length > 0) {
       obj.orderedItems = feeds;
