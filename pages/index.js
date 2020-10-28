@@ -27,6 +27,10 @@ import Item from '../components/card/item';
 import createFetchResourceActivity, { CACHE_FIRST, REVALIDATE } from '../utils/fetch/resource-activity';
 import UpdaterContext from '../context/updater';
 import itemArrayToMap from '../utils/item-array-map';
+import DatabaseContext from '../context/db';
+
+const ITEMS_ACTIVITY = 'ITEMS_ACTIVITY';
+const RESET = 'RESET';
 
 const CONCURRENCY = 10;
 
@@ -90,7 +94,7 @@ function feedReactor(value$) {
     bufferTime(0),
     filter((a) => a.length > 0),
     map((activityStream) => ({
-      type: 'ITEMS_ACTIVITY',
+      type: ITEMS_ACTIVITY,
       payload: activityStream,
     })),
   );
@@ -123,7 +127,7 @@ function activityReducer(state, activity) {
 
 function reducer(state, action) {
   switch (action.type) {
-    case 'ITEMS_ACTIVITY':
+    case ITEMS_ACTIVITY:
       return {
         ...state,
         items: [
@@ -135,7 +139,7 @@ function reducer(state, action) {
           return bDateTime.diff(aDateTime);
         }),
       };
-    case 'RESET':
+    case RESET:
       return initialState;
     default:
       throw new Error('Invalid Action');
@@ -144,31 +148,47 @@ function reducer(state, action) {
 
 function Index() {
   const [app] = useContext(AppContext);
+  const db = useContext(DatabaseContext);
   const autoUpdater = useContext(UpdaterContext);
   const [state, dispatch] = useReducer(reducer, initialState);
-  const followingRef = useRef(app.following);
-  const statusRef = useRef(app.status);
 
-  const subject = useReactor(feedReactor, dispatch, [
-    app.status,
-    app.following,
+  const dispatcher = useCallback((action) => {
+    // Update the database.
+    if (db && action.type === ITEMS_ACTIVITY) {
+      action.payload.forEach(({ type, object }) => {
+        switch (type) {
+          case 'Create':
+          case 'Update':
+            db.feed.put({
+              ...object,
+              published: object.published ? DateTime.fromISO(object.published).toJSDate() : undefined,
+            });
+            break;
+          case 'Remove':
+            db.feed.delete(object.id);
+            break;
+          default:
+            throw new Error('Invalid Activity');
+        }
+      });
+    }
+
+    return dispatch(action);
+  }, [
+    db,
   ]);
 
-  // Update a reference to the current state.
-  useEffect(() => {
-    followingRef.current = app.following;
-    statusRef.current = app.status;
-  }, [
-    app.following,
+  const subject = useReactor(feedReactor, dispatcher, [
     app.status,
+    app.following,
   ]);
 
   const refresh = useCallback(() => {
-    subject.next([statusRef.current, followingRef.current]);
+    subject.next([app.status, app.following]);
   }, [
     subject,
-    followingRef,
-    statusRef,
+    app.following,
+    app.status,
   ]);
 
   useEffect(() => {
