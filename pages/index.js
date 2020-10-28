@@ -3,7 +3,6 @@ import {
   useReducer,
   useMemo,
   useEffect,
-  useRef,
   useCallback,
 } from 'react';
 import {
@@ -161,7 +160,9 @@ function Index() {
           case 'Update':
             db.feed.put({
               ...object,
-              published: object.published ? DateTime.fromISO(object.published).toJSDate() : undefined,
+              published: object.published
+                ? DateTime.fromISO(object.published).toJSDate()
+                : undefined,
             });
             break;
           case 'Remove':
