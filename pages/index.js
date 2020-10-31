@@ -26,6 +26,7 @@ import useReactor from '@cinematix/reactor';
 import AppContext from '../context/app';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
+import InstallPrompt from '../components/install-prompt';
 import UpdaterContext from '../context/updater';
 import itemArrayToMap from '../utils/item-array-map';
 import DatabaseContext from '../context/db';
@@ -351,6 +352,7 @@ function Index() {
       <div className="container pt-5">
         <div className="row">
           <div className="mt-3 col-lg-8 offset-lg-2 col">
+            <InstallPrompt />
             {items.map((item) => (
               <Item key={item.id} resource={item} />
             ))}
