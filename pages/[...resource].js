@@ -1,4 +1,4 @@
-import { useReducer, useMemo } from 'react';
+import { useReducer, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { decode } from 'base64url';
 import useReactor from '@cinematix/reactor';
@@ -17,18 +17,22 @@ import Collection from '../components/resource/collection';
 import Item from '../components/resource/item';
 import Meta from '../components/meta';
 
+const REDIRECT = 'REDIRECT';
+const RESOURCE_SET = 'RESOURCE_SET';
+const RESET = 'RESET';
+
 const initialState = {
   resource: {},
 };
 
 function reducer(state, action) {
   switch (action.type) {
-    case 'RESOURCE_SET':
+    case RESOURCE_SET:
       return {
         ...state,
         resource: action.payload,
       };
-    case 'RESET':
+    case RESET:
       return initialState;
     default:
       throw new Error();
@@ -51,7 +55,7 @@ function resourceReactor(value$) {
         ) {
           try {
             init = of({
-              type: 'RESOURCE_SET',
+              type: RESOURCE_SET,
               payload: JSON.parse(element.innerText),
             });
           } catch (e) {
@@ -74,7 +78,7 @@ function resourceReactor(value$) {
             // If the repsonse was redirected, preform the redirect locally as well.
             if (response.redirected) {
               return of({
-                type: 'REDIRECT',
+                type: REDIRECT,
                 payload: getResourceLinkData(url.toString()),
               });
             }
@@ -86,7 +90,7 @@ function resourceReactor(value$) {
 
             return from(getResponseData(response)).pipe(
               map((payload) => ({
-                type: 'RESOURCE_SET',
+                type: RESOURCE_SET,
                 payload,
               })),
             );
@@ -104,14 +108,20 @@ function Resource() {
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  useReactor(resourceReactor, (action) => {
+  const dispatcher = useCallback((action) => {
     // Redirect action uses the router rather than the reducer.
-    if (action.type === 'REDIRECT') {
+    if (action.type === REDIRECT) {
       router.replace(action.payload.href, action.payload.as);
-    } else {
-      dispatch(action);
+      return;
     }
-  }, [domain, hash]);
+
+    dispatch(action);
+  }, [
+    router,
+    dispatch,
+  ]);
+
+  useReactor(resourceReactor, dispatcher, [domain, hash]);
 
   const res = JSON.stringify(state.resource);
 
