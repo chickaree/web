@@ -318,6 +318,10 @@ function Index() {
     // Only show items that are in the past
     // @TODO add some sort of setInterval to re-render when those items are past now.
     return state.items.filter((item) => {
+      if (item.type === 'OrderedCollection') {
+        return false;
+      }
+
       const published = getPublishedDateTime(item);
 
       return published < now;
