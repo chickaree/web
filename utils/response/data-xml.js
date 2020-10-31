@@ -39,8 +39,23 @@ async function getResponseDataXML(url, doc) {
 
         const name = itemText('title');
 
+        const guid = itemText('guid');
+        let id;
+        if (guid) {
+          try {
+            const uri = (new URL(guid)).toString();
+            id = uri;
+          } catch (e) {
+            // Since is golden.
+          }
+        }
+
+        if (!id) {
+          id = href || objectUri(name);
+        }
+
         return {
-          id: href || objectUri(name),
+          id,
           type: 'Object',
           name,
           published: pubDate ? DateTime.fromRFC2822(pubDate).toUTC().toISO() : undefined,
@@ -78,8 +93,23 @@ async function getResponseDataXML(url, doc) {
         const href = link ? (new URL(link, url)).toString() : undefined;
         const name = itemText('title');
 
+        const entryId = itemText('id');
+        let id;
+        if (entryId) {
+          try {
+            const uri = (new URL(entryId)).toString();
+            id = uri;
+          } catch (e) {
+            // Since is golden.
+          }
+        }
+
+        if (!id) {
+          id = href || objectUri(name);
+        }
+
         return {
-          id: href || objectUri(name),
+          id,
           type: 'Object',
           name,
           published: published ? DateTime.fromISO(published).toUTC().toISO() : undefined,

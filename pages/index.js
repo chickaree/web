@@ -94,7 +94,7 @@ function feedRefresher(value$) {
             // Since the feed has been updated, we'll take the oppertunity to update everything
             // that isn't being removed.
             return merge(
-              from(removing.map((item) => wrapObject(item, ACTIVITY_REMOVE))),
+              from(removing.map((id) => wrapObject(cachedItems.get(id), ACTIVITY_REMOVE))),
               from(orderedItems || []).pipe(
                 flatMap((item) => {
                   const uri = new URL(item.id);
@@ -125,6 +125,10 @@ function feedRefresher(value$) {
                         {
                           ...item,
                           ...updatedItem,
+                          // Use the id from the feed, which may be different from what is returned
+                          // on the object itself (ugh). This allows the items to be looked up
+                          // easeir later.
+                          id: item.id || updatedItem.id,
                           context,
                         },
                         cachedItems.has(updatedItem.id) ? ACTIVITY_UPDATE : ACTIVITY_CREATE,

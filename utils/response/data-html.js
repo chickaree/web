@@ -179,7 +179,7 @@ async function getResponseDataHTML(url, doc) {
         mainCreativeWork = data;
         if (data.mainEntity) {
           obj.orderedItems = toArray(data.mainEntity.itemListElement || []).map((item) => ({
-            id: item.url || hashUri(item),
+            id: item.id || item.url || hashUri(item),
             type: 'Object',
             url: item.url ? {
               type: 'Link',
@@ -193,7 +193,7 @@ async function getResponseDataHTML(url, doc) {
         obj.type = 'OrderedCollection';
         // @TODO handle embeded items?
         obj.orderedItems = toArray(data.itemListElement || []).map((item) => ({
-          id: item.url || hashUri(item),
+          id: item.id || item.url || hashUri(item),
           type: 'Object',
           url: item.url ? {
             type: 'Link',

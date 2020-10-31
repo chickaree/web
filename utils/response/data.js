@@ -14,22 +14,22 @@ async function getResponseData(response) {
 
   if (mimeType === '') {
     return {
-      id: url,
+      id: url.toString(),
       type: 'Object',
       url: {
         type: 'Link',
-        href: url,
+        href: url.toString(),
       },
     };
   }
 
   if (!MIME_TYPES.has(mimeType)) {
     return {
-      id: url,
+      id: url.toString(),
       type: 'Object',
       url: {
         type: 'Link',
-        href: url,
+        href: url.toString(),
         mediaType: mimeType,
       },
     };
