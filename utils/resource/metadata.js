@@ -1,4 +1,4 @@
-import getResourceLinkData from './link-data';
+import getResourcePath from './path';
 
 const URL_BASE = 'https://chickar.ee';
 
@@ -33,7 +33,7 @@ function getResourceMetadata(resource) {
   }
 
   const resourceURL = new URL(resource.url.href);
-  const url = new URL(getResourceLinkData(resource.url.href).as, URL_BASE);
+  const url = new URL(getResourcePath(resource.url.href), URL_BASE);
   schema.url = url.toString();
   og.url = url.toString();
 
@@ -77,7 +77,7 @@ function getResourceMetadata(resource) {
           sameAs: resource.url.href,
           datePublished: schema.datePublished,
           itemListElement: (resource.orderedItems || []).map(({ url: itemurl }) => {
-            const itemURL = new URL(getResourceLinkData(itemurl.href).as, URL_BASE);
+            const itemURL = new URL(getResourcePath(itemurl.href), URL_BASE);
 
             return {
               '@id': itemURL.toString(),
@@ -119,7 +119,7 @@ function getResourceMetadata(resource) {
 
         if (resource.attributedTo) {
           const { origin } = new URL(resource.url.href);
-          const originURL = new URL(getResourceLinkData(origin).as, URL_BASE);
+          const originURL = new URL(getResourcePath(origin), URL_BASE);
 
           schema.mainEntity.author = {
             '@id': originURL.toString(),

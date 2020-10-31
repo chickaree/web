@@ -10,6 +10,7 @@ import {
   fromEvent,
   merge,
   EMPTY,
+  of,
 } from 'rxjs';
 import {
   flatMap,
@@ -97,22 +98,20 @@ function feedRefresher(value$) {
               from(removing.map((id) => wrapObject(cachedItems.get(id), ACTIVITY_REMOVE))),
               from(orderedItems || []).pipe(
                 flatMap((item) => {
-                  const uri = new URL(item.id);
-
                   // Deal with embeded items.
-                  if (uri.hostname === 'chickar.ee') {
+                  if (!item.url) {
                     if (!cachedItems.has(item.id)) {
-                      return wrapObject({
+                      return of(wrapObject({
                         ...item,
                         context,
-                      }, ACTIVITY_CREATE);
+                      }, ACTIVITY_CREATE));
                     }
 
                     if (JSON.stringify(cachedItems.get(item.id)) !== JSON.stringify(item)) {
-                      return wrapObject({
+                      return of(wrapObject({
                         ...item,
                         context,
-                      }, ACTIVITY_UPDATE);
+                      }, ACTIVITY_UPDATE));
                     }
 
                     return EMPTY;

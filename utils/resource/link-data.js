@@ -1,11 +1,8 @@
-import { encode } from 'base64url';
+import getResourcePath from './path';
 
 function getResourceLinkData(resource) {
-  const url = new URL(resource);
-  const path = url.href.substr(url.origin.length);
-
   return {
-    as: path === '/' ? `/${url.host}` : `/${url.host}/${encode(path.substr(1))}`,
+    as: getResourcePath(resource),
     href: '/[...resource]',
   };
 }
