@@ -62,7 +62,7 @@ function feedRefresher(value$) {
 
         return [
           ...acc,
-          feedItems.map((item) => wrapObject(item, ACTIVITY_REMOVE)),
+          ...feedItems.map((item) => wrapObject(item, ACTIVITY_REMOVE)),
         ];
       }, []);
 
