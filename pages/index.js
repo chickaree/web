@@ -352,7 +352,7 @@ function Index() {
       <div className="container pt-5">
         <div className="row">
           <div className="mt-3 col-lg-8 offset-lg-2 col">
-            <InstallPrompt />
+            <InstallPrompt disable={items.length === 0} />
             {items.map((item) => (
               <Item key={item.id} resource={item} />
             ))}

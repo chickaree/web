@@ -61,7 +61,7 @@ function reducer(state, action) {
   }
 }
 
-function InstallPrompt() {
+function InstallPrompt({ disable = false }) {
   const prompter = useRef();
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -114,7 +114,7 @@ function InstallPrompt() {
     dispatch,
   ]);
 
-  if (state.status !== STATUS_PROMPT) {
+  if (disable || state.status !== STATUS_PROMPT) {
     return null;
   }
 
