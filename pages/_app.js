@@ -15,12 +15,14 @@ import '../styles/styles.scss';
 import UpdaterContext from '../context/updater';
 import DatabaseContext from '../context/db';
 
-const DB_READY = 'DB_READY';
+const STATUS_INIT = 'init';
+const STATUS_READY = 'ready';
+const FOLLOWING_SET = 'FOLLOWING_SET';
 const FOLLOW = 'FOLLOW';
 const UNFOLLOW = 'UNFOLLOW';
 
 const initialState = {
-  status: 'init',
+  status: STATUS_INIT,
   following: [],
 };
 
@@ -45,10 +47,10 @@ async function loadFollowing(db) {
 
 function reducer(state, action) {
   switch (action.type) {
-    case DB_READY:
+    case FOLLOWING_SET:
       return {
         ...state,
-        status: 'ready',
+        status: STATUS_READY,
         following: [...new Set([...state.following, ...action.payload])],
       };
     case FOLLOW:
@@ -94,7 +96,7 @@ function Chickaree({ Component, pageProps }) {
 
     loadFollowing(db).then((feeds) => {
       dispatch({
-        type: DB_READY,
+        type: FOLLOWING_SET,
         payload: feeds,
       });
     });

@@ -7,15 +7,17 @@ import {
 } from 'react';
 import {
   from,
-  concat,
   fromEvent,
-  of,
+  merge,
+  EMPTY,
 } from 'rxjs';
 import {
   flatMap,
   map,
   bufferTime,
   filter,
+  distinctUntilChanged,
+  switchMap,
 } from 'rxjs/operators';
 import Link from 'next/link';
 import { DateTime } from 'luxon';
@@ -23,83 +25,145 @@ import useReactor from '@cinematix/reactor';
 import AppContext from '../context/app';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
-import createFetchResourceActivity, { CACHE_FIRST, REVALIDATE } from '../utils/fetch/resource-activity';
 import UpdaterContext from '../context/updater';
 import itemArrayToMap from '../utils/item-array-map';
 import DatabaseContext from '../context/db';
+import getResponseData from '../utils/response/data';
+import fetchResource from '../utils/fetch/resource';
+import wrapObject from '../utils/wrap-obj';
+
+const STATUS_INIT = 'init';
+const STATUS_READY = 'ready';
+
+const ACTIVITY_CREATE = 'Create';
+const ACTIVITY_UPDATE = 'Update';
+const ACTIVITY_REMOVE = 'Remove';
 
 const ITEMS_ACTIVITY = 'ITEMS_ACTIVITY';
+const ITEMS_SET = 'ITEMS_SET';
 const RESET = 'RESET';
 
-const CONCURRENCY = 10;
+function feedRefresher(value$) {
+  return value$.pipe(
+    switchMap(({ feeds, items }) => {
+      const feedSet = new Set(feeds);
+      const itemMap = items.reduce((acc, item) => (
+        acc.set(item.context.url.href, [
+          ...(acc.get(item.context.url.href) || []),
+          item,
+        ])
+      ), new Map());
 
-function createFeedStream() {
-  const fetchResourceActivity = createFetchResourceActivity();
+      // Remove items that are no longer in the list of feeds.
+      const remove = [...itemMap.entries()].reduce((acc, [feedUrl, feedItems]) => {
+        if (feedSet.has(feedUrl)) {
+          return acc;
+        }
 
-  return (feeds, cacheStrategy) => (
-    from(feeds).pipe(
-      flatMap((feed) => fetchResourceActivity(feed, cacheStrategy), CONCURRENCY),
-      flatMap(({ object }) => {
-        const { orderedItems, ...context } = object;
+        return [
+          ...acc,
+          feedItems.map((item) => wrapObject(item, ACTIVITY_REMOVE)),
+        ];
+      }, []);
 
-        return from(orderedItems || []).pipe(
-          flatMap((activity) => {
-            const { object: item } = activity;
+      return merge(
+        from(remove),
+        from(feeds).pipe(
+          flatMap((feed) => fetchResource(feed)),
+          flatMap((response) => getResponseData(response)),
+          flatMap((object) => {
+            const { orderedItems, ...context } = object;
+            const cachedItems = itemArrayToMap(itemMap.get(object.url.href) || []);
+            const currentItems = itemArrayToMap(orderedItems || []);
 
-            if (activity.type === 'Remove') {
-              return of(activity);
+            // If there are no orderedItems returned, then remove everything.
+            if (currentItems.size === 0) {
+              return from(
+                [...cachedItems.values()].map((item) => wrapObject(item, ACTIVITY_REMOVE)),
+              );
             }
 
-            // Activity type is hinted as 'Create' or 'Update'
-            return fetchResourceActivity(item.url.href, cacheStrategy).pipe(
-              // On this page, discard nested OrderedCollections.
-              filter((act) => act.object.type !== 'OrderedCollection'),
-              map((act) => ({
-                ...activity,
-                ...act,
-                object: {
-                  ...item,
-                  ...act.object,
-                  context,
-                },
-              })),
+            const removing = [...cachedItems.keys()].filter((x) => !currentItems.has(x));
+            const adding = [...currentItems.keys()].filter((x) => !cachedItems.has(x));
+
+            // If we not adding or removing anything, we may assume the feed has not changed.
+            if (adding.length === 0 && removing.length === 0) {
+              return EMPTY;
+            }
+
+            // Since the feed has been updated, we'll take the oppertunity to update everything
+            // that isn't being removed.
+            return merge(
+              from(removing.map((item) => wrapObject(item, ACTIVITY_REMOVE))),
+              from(orderedItems || []).pipe(
+                flatMap((item) => {
+                  const uri = new URL(item.id);
+
+                  // Deal with embeded items.
+                  if (uri.hostname === 'chickar.ee') {
+                    if (!cachedItems.has(item.id)) {
+                      return wrapObject({
+                        ...item,
+                        context,
+                      }, ACTIVITY_CREATE);
+                    }
+
+                    if (JSON.stringify(cachedItems.get(item.id)) !== JSON.stringify(item)) {
+                      return wrapObject({
+                        ...item,
+                        context,
+                      }, ACTIVITY_UPDATE);
+                    }
+
+                    return EMPTY;
+                  }
+
+                  return fetchResource(item.url.href).pipe(
+                    flatMap((response) => getResponseData(response)),
+                    map((updatedItem) => (
+                      wrapObject(
+                        {
+                          ...item,
+                          ...updatedItem,
+                          context,
+                        },
+                        cachedItems.has(updatedItem.id) ? ACTIVITY_UPDATE : ACTIVITY_CREATE,
+                      )
+                    )),
+                  );
+                }),
+              ),
             );
-          }, CONCURRENCY),
-        );
-      }),
-    )
+          }),
+        ),
+      ).pipe(
+        // Group by tick.
+        bufferTime(0),
+        filter((a) => a.length > 0),
+        map((activityStream) => ({
+          type: ITEMS_ACTIVITY,
+          payload: activityStream,
+        })),
+      );
+    }),
   );
 }
 
 function feedReactor(value$) {
-  const feedStream = createFeedStream();
-
   return value$.pipe(
-    map(([status, feeds]) => ({ status, feeds })),
-    filter(({ status }) => status === 'ready'),
-    filter(({ feeds }) => feeds.length > 0),
-    flatMap(({ feeds }, index) => {
-      if (index === 0) {
-        return concat(
-          feedStream(feeds, CACHE_FIRST),
-          feedStream(feeds, REVALIDATE),
-        );
-      }
-
-
-      return feedStream(feeds, REVALIDATE);
-    }),
-    // Group by tick.
-    bufferTime(0),
-    filter((a) => a.length > 0),
-    map((activityStream) => ({
-      type: ITEMS_ACTIVITY,
-      payload: activityStream,
+    map(([appStatus, feeds, status, items]) => ({
+      appStatus, status, feeds, items,
     })),
+    filter(({ appStatus, status }) => (
+      appStatus === STATUS_READY && status === STATUS_READY
+    )),
+    distinctUntilChanged((x, y) => x.feeds === y.feeds),
+    feedRefresher,
   );
 }
 
 const initialState = {
+  status: STATUS_INIT,
   items: [],
 };
 
@@ -113,10 +177,10 @@ function activityReducer(state, activity) {
   const { object, type } = activity;
 
   switch (type) {
-    case 'Create':
-    case 'Update':
+    case ACTIVITY_CREATE:
+    case ACTIVITY_UPDATE:
       return state.set(object.id, object);
-    case 'Remove':
+    case ACTIVITY_REMOVE:
       state.delete(object.id);
       return state;
     default:
@@ -126,6 +190,12 @@ function activityReducer(state, activity) {
 
 function reducer(state, action) {
   switch (action.type) {
+    case ITEMS_SET:
+      return {
+        ...state,
+        status: STATUS_READY,
+        items: action.payload,
+      };
     case ITEMS_ACTIVITY:
       return {
         ...state,
@@ -153,11 +223,11 @@ function Index() {
 
   const dispatcher = useCallback((action) => {
     // Update the database.
-    if (db && action.type === ITEMS_ACTIVITY) {
+    if (action.type === ITEMS_ACTIVITY) {
       action.payload.forEach(({ type, object }) => {
         switch (type) {
-          case 'Create':
-          case 'Update':
+          case ACTIVITY_CREATE:
+          case ACTIVITY_UPDATE:
             db.feed.put({
               ...object,
               published: object.published
@@ -165,7 +235,7 @@ function Index() {
                 : undefined,
             });
             break;
-          case 'Remove':
+          case ACTIVITY_REMOVE:
             db.feed.delete(object.id);
             break;
           default:
@@ -179,17 +249,42 @@ function Index() {
     db,
   ]);
 
-  const subject = useReactor(feedReactor, dispatcher, [
+  useReactor(feedReactor, dispatcher, [
     app.status,
     app.following,
+    state.status,
+    state.items,
   ]);
 
+  const subject = useReactor(feedRefresher, dispatcher);
+
   const refresh = useCallback(() => {
-    subject.next([app.status, app.following]);
+    subject.next({
+      feeds: app.following,
+      items: state.items,
+    });
   }, [
     subject,
     app.following,
-    app.status,
+    state.items,
+  ]);
+
+  useEffect(() => {
+    if (!db) {
+      return;
+    }
+
+    db.feed.orderBy('published').reverse().toArray().then((items) => (
+      dispatch({
+        type: ITEMS_SET,
+        payload: items.map((item) => ({
+          ...item,
+          published: item.published ? DateTime.fromJSDate(item.published).toISO() : undefined,
+        })),
+      })
+    ));
+  }, [
+    db,
   ]);
 
   useEffect(() => {

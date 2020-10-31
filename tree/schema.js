@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
-import data from 'schemaorg/data/releases/7.03/schema.jsonld';
+import data from 'schemaorg/data/releases/10.0/schemaorg-all-http.jsonld';
 import toArray from '../utils/to-array';
 
 function getTree(uri) {

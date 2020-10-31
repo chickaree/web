@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@cinematix/next-cloudflare": "^1.1.1",
-    "@cinematix/reactor": "^2.0.0",
+    "@cinematix/reactor": "^2.1.0",
     "base64url": "^3.0.1",
     "copy-webpack-plugin": "^6.0.3",
     "dexie": "^3.0.1",
@@ -50,12 +50,12 @@
     "eslint-plugin-react": "^7.19.0",
     "eslint-plugin-react-hooks": "^2.5.0",
     "napa": "^3.0.0",
-    "sass": "^1.26.5",
+    "sass": "^1.28.0",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11",
     "webpack-node-externals": "^1.7.2"
   },
   "napa": {
-    "schemaorg": "schemaorg/schemaorg#v7.03-release"
+    "schemaorg": "schemaorg/schemaorg#V10.0-release"
   }
 }

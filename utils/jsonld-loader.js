@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-unresolved
-import schema from 'schemaorg/data/releases/7.03/schemaorgcontext.jsonld?json';
+import schema from 'schemaorg/data/releases/10.0/schemaorgcontext.jsonld?json';
 
 const CONTEXTS = new Map([
   ['schema.org', schema],
