@@ -1,8 +1,10 @@
 import { DateTime } from 'luxon';
 import getImageObj from '../image-obj';
+import objectUri from '../object-uri';
 
 async function getResponseDataJson(url, data) {
   return {
+    id: url.toString(),
     type: 'OrderedCollection',
     url: {
       type: 'Link',
@@ -20,6 +22,7 @@ async function getResponseDataJson(url, data) {
       date_modified: modified,
       summary,
     }) => ({
+      id: href || objectUri(title),
       type: 'Object',
       name: title,
       url: href ? {

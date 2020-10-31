@@ -157,6 +157,8 @@ a.active {
 }
 
 .feed-item {
+  content-visibility: auto;
+  contain-intrinsic-size: 600px;
   padding-left: 0;
   padding-right: 0;
 }

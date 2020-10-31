@@ -14,6 +14,7 @@ async function getResponseData(response) {
 
   if (mimeType === '') {
     return {
+      id: url,
       type: 'Object',
       url: {
         type: 'Link',
@@ -24,6 +25,7 @@ async function getResponseData(response) {
 
   if (!MIME_TYPES.has(mimeType)) {
     return {
+      id: url,
       type: 'Object',
       url: {
         type: 'Link',

@@ -3,6 +3,7 @@ import {
   useCallback,
   useRef,
   useEffect,
+  useState,
 } from 'react';
 import Dexie from 'dexie';
 import { ulid } from 'ulid';
@@ -12,9 +13,16 @@ import { useRouter } from 'next/router';
 import AppContext from '../context/app';
 import '../styles/styles.scss';
 import UpdaterContext from '../context/updater';
+import DatabaseContext from '../context/db';
+
+const STATUS_INIT = 'init';
+const STATUS_READY = 'ready';
+const FOLLOWING_SET = 'FOLLOWING_SET';
+const FOLLOW = 'FOLLOW';
+const UNFOLLOW = 'UNFOLLOW';
 
 const initialState = {
-  status: 'init',
+  status: STATUS_INIT,
   following: [],
 };
 
@@ -39,18 +47,18 @@ async function loadFollowing(db) {
 
 function reducer(state, action) {
   switch (action.type) {
-    case 'DB_READY':
+    case FOLLOWING_SET:
       return {
         ...state,
-        status: 'ready',
+        status: STATUS_READY,
         following: [...new Set([...state.following, ...action.payload])],
       };
-    case 'FOLLOW':
+    case FOLLOW:
       return {
         ...state,
         following: [...new Set([...state.following, action.payload])],
       };
-    case 'UNFOLLOW':
+    case UNFOLLOW:
       return {
         ...state,
         following: state.following.filter((href) => href !== action.payload),
@@ -64,19 +72,31 @@ function Chickaree({ Component, pageProps }) {
   const router = useRouter();
   const [state, dispatch] = useReducer(reducer, initialState);
   const waitingSwRef = useRef();
-
-  const dbRef = useRef();
+  const [database, setDatabase] = useState();
 
   useEffect(() => {
     const db = new Dexie('Chickaree');
     db.version(1).stores({
+      // @TODO We should remove the auto-incrementing when Dexie supports it.
       activity: '++id, type, published, object.id, object.type, object.href',
     });
-    dbRef.current = db;
+
+    db.version(2).stores({
+      // Add feed store.
+      feed: 'id, published, url.href, context.url.href',
+    }).upgrade((transaction) => (
+      transaction.activity.toCollection().modify((activity) => {
+        // Change published from ISO string to JS Date.
+        // eslint-disable-next-line no-param-reassign
+        activity.published = DateTime.fromISO(activity.published).utc().toJSDate();
+      })
+    ));
+
+    setDatabase(db);
 
     loadFollowing(db).then((feeds) => {
       dispatch({
-        type: 'DB_READY',
+        type: FOLLOWING_SET,
         payload: feeds,
       });
     });
@@ -126,18 +146,12 @@ function Chickaree({ Component, pageProps }) {
 
   // Intercept a dispatch and convert it to an action to be saved in IndexedDB.
   const dispatcher = useCallback((action) => {
-    if (!dbRef.current) {
-      throw new Error('Database not ready!');
-    }
-
-    const db = dbRef.current;
-
-    if (['FOLLOW', 'UNFOLLOW'].includes(action.type)) {
+    if ([FOLLOW, UNFOLLOW].includes(action.type)) {
       const id = `https://chickar.ee/activity/${ulid().toLowerCase()}`;
-      const published = DateTime.utc().toISO();
+      const published = DateTime.utc().toJSDate();
 
-      if (action.type === 'FOLLOW') {
-        db.activity.add({
+      if (action.type === FOLLOW) {
+        database.activity.add({
           id,
           type: 'Follow',
           object: {
@@ -146,11 +160,11 @@ function Chickaree({ Component, pageProps }) {
           },
           published,
         });
-      } else if (action.type === 'UNFOLLOW') {
-        db.activity
+      } else if (action.type === UNFOLLOW) {
+        database.activity
           .where('object.href').equals(action.payload)
           .last((follow) => (
-            db.activity.add({
+            database.activity.add({
               id,
               type: 'Undo',
               object: {
@@ -164,16 +178,18 @@ function Chickaree({ Component, pageProps }) {
 
     return dispatch(action);
   }, [
-    dbRef,
+    database,
     dispatch,
   ]);
 
   return (
     <UpdaterContext.Provider value={autoUpdater}>
-      <AppContext.Provider value={[state, dispatcher]}>
-        {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-        <Component {...pageProps} />
-      </AppContext.Provider>
+      <DatabaseContext.Provider value={database}>
+        <AppContext.Provider value={[state, dispatcher]}>
+          {/* eslint-disable-next-line react/jsx-props-no-spreading */}
+          <Component {...pageProps} />
+        </AppContext.Provider>
+      </DatabaseContext.Provider>
     </UpdaterContext.Provider>
   );
 }
