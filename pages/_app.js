@@ -14,6 +14,7 @@ import AppContext from '../context/app';
 import '../styles/styles.scss';
 import UpdaterContext from '../context/updater';
 import DatabaseContext from '../context/db';
+import PrompterContext from '../context/prompter';
 
 const STATUS_INIT = 'init';
 const STATUS_READY = 'ready';
@@ -73,8 +74,14 @@ function Chickaree({ Component, pageProps }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const waitingSwRef = useRef();
   const [database, setDatabase] = useState();
+  const [prompter, setPrompter] = useState();
 
   useEffect(() => {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setPrompter(e);
+    });
+
     const db = new Dexie('Chickaree');
     db.version(1).stores({
       // @TODO We should remove the auto-incrementing when Dexie supports it.
@@ -186,8 +193,10 @@ function Chickaree({ Component, pageProps }) {
     <UpdaterContext.Provider value={autoUpdater}>
       <DatabaseContext.Provider value={database}>
         <AppContext.Provider value={[state, dispatcher]}>
-          {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-          <Component {...pageProps} />
+          <PrompterContext value={prompter}>
+            {/* eslint-disable-next-line react/jsx-props-no-spreading */}
+            <Component {...pageProps} />
+          </PrompterContext>
         </AppContext.Provider>
       </DatabaseContext.Provider>
     </UpdaterContext.Provider>

@@ -1,6 +1,7 @@
 import {
-  useCallback, useEffect, useReducer, useRef,
+  useCallback, useContext, useEffect, useReducer, useRef,
 } from 'react';
+import PrompterContext from '../context/prompter';
 import Card from './card';
 
 const ACTION_READY = 'READY';
@@ -62,16 +63,10 @@ function reducer(state, action) {
 }
 
 function InstallPrompt({ disable = false }) {
-  const prompter = useRef();
+  const prompter = useContext(PrompterContext);
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      prompter.current = e;
-      dispatch({ type: ACTION_PROMPT });
-    });
-
     const install = localStorage.getItem('install');
 
     switch (install) {
@@ -88,14 +83,25 @@ function InstallPrompt({ disable = false }) {
   }, []);
 
   useEffect(() => {
-    if (state.status === STATUS_ACCEPT) {
-      prompter.current.prompt();
+    if (!prompter) {
+      return;
+    }
+
+    dispatch({ type: ACTION_PROMPT });
+  }, [
+    prompter,
+  ]);
+
+  useEffect(() => {
+    if (prompter && state.status === STATUS_ACCEPT) {
+      prompter.prompt();
     }
 
     if ([STATUS_ACCEPT, STATUS_DECLINE].includes(state.status)) {
       localStorage.setIteam('install', state.status);
     }
   }, [
+    prompter,
     state.status,
   ]);
 
