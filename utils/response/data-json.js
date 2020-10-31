@@ -15,25 +15,42 @@ async function getResponseDataJson(url, data) {
     icon: getImageObj(data.icon, url),
     summary: data.description || '',
     orderedItems: (data.items || []).map(({
+      id: entryId,
       title,
       url: href,
       image,
       date_published: published,
       date_modified: modified,
       summary,
-    }) => ({
-      id: href || objectUri(title),
-      type: 'Object',
-      name: title,
-      url: href ? {
-        type: 'Link',
-        href,
-      } : undefined,
-      image: getImageObj(image, url),
-      published: published ? DateTime.fromISO(published).toUTC().toISO() : undefined,
-      updated: modified ? DateTime.fromISO(modified).toUTC().toISO() : undefined,
-      summary,
-    })),
+    }) => {
+      let id;
+      if (entryId) {
+        try {
+          const uri = (new URL(entryId)).toString();
+          id = uri;
+        } catch (e) {
+          // Silence is golden.
+        }
+      }
+
+      if (!id) {
+        id = href || objectUri(title);
+      }
+
+      return {
+        id,
+        type: 'Object',
+        name: title,
+        url: href ? {
+          type: 'Link',
+          href,
+        } : undefined,
+        image: getImageObj(image, url),
+        published: published ? DateTime.fromISO(published).toUTC().toISO() : undefined,
+        updated: modified ? DateTime.fromISO(modified).toUTC().toISO() : undefined,
+        summary,
+      };
+    }),
   };
 }
 
