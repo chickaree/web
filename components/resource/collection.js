@@ -240,9 +240,9 @@ function Collection({
   ), [state.items]);
 
   let follow;
-  if (!iconSrc && entities.length > 0) {
+  if (entities.length > 0) {
     follow = (
-      <div className="row mb-2 justify-content-center">
+      <div className={iconSrc ? 'd-lg-none row mb-2 justify-content-center' : 'row mb-2 justify-content-center'}>
         <div className="col-8 col-lg-6">
           <FollowButton href={url.href} />
         </div>
