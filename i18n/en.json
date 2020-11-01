@@ -1,0 +1,19 @@
+{
+  "name": "Chickaree",
+  "desc": "A new social network designed to reach all your followers without an algorithm getting in the way.",
+  "back": "Back",
+  "refresh": "Refresh",
+  "menu-close": "Close menu",
+  "menu-open": "Open menu",
+  "menu-search": "Search",
+  "menu-home": "Home",
+  "search-label": "Search",
+  "search-help": "Text or URL",
+  "welcome-desc-searching": "searching",
+  "welcome-desc-providing": "providing",
+  "welcome-title": "Welcome!",
+  "welcome-desc": "To get started, try $1 for feeds by name or by $2 a URL.",
+  "install-prompt": "Would you like to install $1 on this device?",
+  "install-accept": "Install",
+  "install-decline": "Cancel"
+}

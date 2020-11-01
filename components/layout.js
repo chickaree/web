@@ -9,6 +9,7 @@ import {
   useContext,
 } from 'react';
 import { useRouter } from 'next/router';
+import { BananaContext, Message } from '@wikimedia/react.i18n';
 import BackButton from './back-button';
 import UpdaterContext from '../context/updater';
 
@@ -132,6 +133,7 @@ const Layout = ({
   const router = useRouter();
   const canvasRef = useRef(undefined);
   const autoUpdater = useContext(UpdaterContext);
+  const banana = useContext(BananaContext);
 
   // Update the state when the animation completes.
   useEffect(() => {
@@ -197,11 +199,12 @@ const Layout = ({
 
   const menuButtonTitle = useMemo(() => {
     if ([STATUS_OPEN, STATUS_OPENING].includes(state.status)) {
-      return 'Close menu';
+      return banana.i18n('menu-close');
     }
 
-    return 'Open menu';
+    return banana.i18n('menu-open');
   }, [
+    banana,
     state.status,
   ]);
 
@@ -254,12 +257,12 @@ const Layout = ({
 
   const logo = useMemo(() => {
     const img = (
-      <img src="/img/icon2.svg" alt="chickar.ee" />
+      <img src="/img/icon2.svg" alt={banana.i18n('name')} />
     );
 
     if (router.pathname === '/') {
       return (
-        <button type="button" className="btn btn-link p-0" title="Refresh" onClick={onLogoClick}>
+        <button type="button" className="btn btn-link p-0" title={banana.i18n('refresh')} onClick={onLogoClick}>
           {img}
         </button>
       );
@@ -267,7 +270,7 @@ const Layout = ({
 
     return (
       <Link href="/">
-        <a title="Home">
+        <a title={banana.i18n('menu-home')}>
           {img}
         </a>
       </Link>
@@ -282,13 +285,13 @@ const Layout = ({
   return (
     <>
       <Head>
-        <title>Chickaree</title>
+        <title>{banana.i18n('name')}</title>
         <link rel="manifest" href="/manifest.json" />
         <meta key="robots" name="robots" content="all" />
         <meta key="viewport" name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta key="og:title" property="og:title" content="Chickaree" />
+        <meta key="og:title" property="og:title" content={banana.i18n('name')} />
         <meta key="og:url" property="og:url" content="https://chickar.ee" />
-        <meta key="og:description" property="og:description" content="A new social network designed to reach all your followers without an algorithm getting in the way." />
+        <meta key="og:description" property="og:description" content={banana.i18n('desc')} />
         <meta key="og:type" property="og:type" content="website" />
         <meta key="og:image" property="og:image" content="https://chickar.ee/img/og-background2.png" />
         <script key="schema" type="application/ld+json" />
@@ -320,7 +323,7 @@ const Layout = ({
                       />
                     </g>
                   </svg>
-                  <span> Home</span>
+                  <span> <Message id="menu-home" /></span>
                 </NavLink>
               </li>
               <li className="nav-item search">
@@ -331,7 +334,7 @@ const Layout = ({
                       d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
                     />
                   </svg>
-                  <span> Search</span>
+                  <span> <Message id="menu-search" /></span>
                 </NavLink>
               </li>
             </ol>

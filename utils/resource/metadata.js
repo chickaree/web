@@ -2,20 +2,11 @@ import getResourcePath from './path';
 
 const URL_BASE = 'https://chickar.ee';
 
-function createTitle(pieces = []) {
-  let parts = pieces;
-
-  if (!Array.isArray(parts)) {
-    parts = [parts];
-  }
-
-  return [
-    ...parts,
-    'Chickaree',
-  ].filter((part) => !!part).join(' | ');
+function createTitle(...pieces) {
+  return pieces.filter((part) => !!part).join(' | ');
 }
 
-function getResourceMetadata(resource) {
+function getResourceMetadata(resource, appName = 'Chickaree') {
   const og = {};
   const schema = {
     '@context': 'http://schema.org/',
@@ -89,9 +80,9 @@ function getResourceMetadata(resource) {
         };
         og.type = 'profile';
         if (resource.name) {
-          title = createTitle(resource.name);
+          title = createTitle(resource.name, appName);
         } else if (resource.attributedTo && resource.attributedTo.name) {
-          title = createTitle(resource.attributedTo.name);
+          title = createTitle(resource.attributedTo.name, appName);
         }
 
         // Since there is no way to know if a collection is private or not,
@@ -138,11 +129,11 @@ function getResourceMetadata(resource) {
         }
 
         og.type = 'article';
-        title = createTitle([resource.name, resource.attributedTo.name]);
+        title = createTitle(resource.name, resource.attributedTo.name, appName);
         break;
       default:
         og.type = 'website';
-        title = createTitle();
+        title = createTitle(appName);
         break;
     }
   }

@@ -19,6 +19,7 @@
   "dependencies": {
     "@cinematix/next-cloudflare": "^1.1.1",
     "@cinematix/reactor": "^2.1.0",
+    "@wikimedia/react.i18n": "^2.0.3",
     "base64url": "^3.0.1",
     "copy-webpack-plugin": "^6.0.3",
     "dexie": "^3.0.1",

@@ -19,6 +19,7 @@ import getResponseData from '../utils/response/data';
 import MIME_TYPES from '../utils/mime-types';
 import Item from '../components/card/item';
 import getResourceLinkData from '../utils/resource/link-data';
+import { Message } from '@wikimedia/react.i18n';
 
 const initialState = {
   resources: [],
@@ -284,7 +285,7 @@ function Search() {
           <div className="mt-3 col-lg-8 offset-lg-2 col">
             <form className="mb-3" onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="q">Search</label>
+                <label htmlFor="q"><Message id="search-label" /></label>
                 <input
                   className="form-control form-control-lg bg-transparent text-primary"
                   type="text"
@@ -294,7 +295,7 @@ function Search() {
                   value={q || ''}
                   onChange={handleChange}
                 />
-                <small className="form-text text-muted">Text or URL</small>
+                <small className="form-text text-muted"><Message id="search-help" /></small>
               </div>
             </form>
             {collections.map((item) => (

@@ -1,0 +1,19 @@
+{
+  "name": "Name of the app",
+  "desc": "Description of the app",
+  "back": "Button title for the back button",
+  "refresh": "Button to refresh the feed",
+  "menu-close": "Button to close the menu",
+  "menu-open": "Button to open the menu",
+  "menu-search": "Label for search page in the menu",
+  "menu-home": "Label for home page in the menu",
+  "search-label": "Form label for search input",
+  "search-help": "Help text for search input",
+  "welcome-desc-searching": "Text used in welcome-desc",
+  "welcome-desc-providing": "Text used in welcome-desc",
+  "welcome-title": "Heading used on user's initial visit",
+  "welcome-desc": "Description used on user's initial visit.\nParameters:\n1. searching\n2. providing",
+  "install-prompt": "Prompt to the user to install the web app on their device.\nParameters:\n1. name",
+  "install-accept": "Button to install the web application",
+  "install-decline": "Button to decline the install of the web application"
+}

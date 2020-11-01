@@ -10,11 +10,13 @@ import { ulid } from 'ulid';
 import { DateTime } from 'luxon';
 import { Workbox, messageSW } from 'workbox-window';
 import { useRouter } from 'next/router';
+import { IntlProvider } from '@wikimedia/react.i18n';
 import AppContext from '../context/app';
 import '../styles/styles.scss';
 import UpdaterContext from '../context/updater';
 import DatabaseContext from '../context/db';
 import PrompterContext from '../context/prompter';
+import en from '../i18n/en.json';
 
 const STATUS_INIT = 'init';
 const STATUS_READY = 'ready';
@@ -189,17 +191,24 @@ function Chickaree({ Component, pageProps }) {
     dispatch,
   ]);
 
+  // @TODO support more languages.
+  const messages = {
+    en,
+  };
+
   return (
-    <UpdaterContext.Provider value={autoUpdater}>
-      <DatabaseContext.Provider value={database}>
-        <AppContext.Provider value={[state, dispatcher]}>
-          <PrompterContext.Provider value={prompter}>
-            {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-            <Component {...pageProps} />
-          </PrompterContext.Provider>
-        </AppContext.Provider>
-      </DatabaseContext.Provider>
-    </UpdaterContext.Provider>
+    <IntlProvider messages={messages} locale="en">
+      <UpdaterContext.Provider value={autoUpdater}>
+        <DatabaseContext.Provider value={database}>
+          <AppContext.Provider value={[state, dispatcher]}>
+            <PrompterContext.Provider value={prompter}>
+              {/* eslint-disable-next-line react/jsx-props-no-spreading */}
+              <Component {...pageProps} />
+            </PrompterContext.Provider>
+          </AppContext.Provider>
+        </DatabaseContext.Provider>
+      </UpdaterContext.Provider>
+    </IntlProvider>
   );
 }
 

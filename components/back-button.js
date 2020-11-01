@@ -1,7 +1,8 @@
 import {
-  useEffect, useReducer, useMemo, useCallback,
+  useEffect, useReducer, useMemo, useCallback, useContext,
 } from 'react';
 import { useRouter } from 'next/router';
+import { BananaContext } from '@wikimedia/react.i18n';
 
 const HISTORY_LENGTH = 'HISTORY_LENGTH';
 
@@ -26,6 +27,7 @@ function BackButton({
 }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const router = useRouter();
+  const banana = useContext(BananaContext);
 
   useEffect(() => {
     dispatch({ type: HISTORY_LENGTH, payload: window.history.length });
@@ -57,7 +59,7 @@ function BackButton({
   }
 
   return (
-    <button type="button" title="Back" className="btn btn-link pl-0 pr-0" onClick={handleClick}>
+    <button type="button" title={banana.i18n('back')} className="btn btn-link pl-0 pr-0" onClick={handleClick}>
       <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
         <path d="M0 0h24v24H0z" fill="none" />
         <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />

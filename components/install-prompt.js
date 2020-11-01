@@ -1,3 +1,4 @@
+import { Message } from '@wikimedia/react.i18n';
 import {
   useCallback, useContext, useEffect, useReducer,
 } from 'react';
@@ -121,7 +122,7 @@ function InstallPrompt() {
   ]);
 
   if (state.status !== STATUS_PROMPT) {
-    return null;
+    // return null;
   }
 
   return (
@@ -129,7 +130,12 @@ function InstallPrompt() {
       <div className="card-body">
         <div className="row justify-content-between align-items-center">
           <div className="col-md-auto col-12 mb-3 mb-md-0">
-            Would you like to install Chickaree on this device?
+            <Message
+              id="install-prompt"
+              placeholders={[
+                <Message id="name" />,
+              ]}
+            />
           </div>
           <div className="col-md-auto col-12">
             <div className="row flex-nowrap">
@@ -141,7 +147,7 @@ function InstallPrompt() {
                   value="decline"
                   onClick={handleChange}
                 >
-                  Cancel
+                  <Message id="install-decline" />
                 </button>
               </div>
               <div className="col">
@@ -152,7 +158,7 @@ function InstallPrompt() {
                   value="accept"
                   onClick={handleChange}
                 >
-                  Install
+                  <Message id="install-accept" />
                 </button>
               </div>
             </div>

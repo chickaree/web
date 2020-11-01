@@ -24,6 +24,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { DateTime } from 'luxon';
 import useReactor from '@cinematix/reactor';
+import { Message } from '@wikimedia/react.i18n';
 import AppContext from '../context/app';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
@@ -338,9 +339,15 @@ function Index() {
         <div className="container min-vh-100">
           <div className="row pt-5 align-content-stretch align-items-center min-vh-100">
             <div className="mt-3 col-lg-8 offset-lg-2 col text-center">
-              <h2>Welcome!</h2>
+              <h2><Message id="welcome-title" /></h2>
               <p>
-                To get started, try <Link href="/search"><a>searching</a></Link> for feeds by name or by <Link href="/search"><a>providing</a></Link> a URL.
+                <Message
+                  id="welcome-desc"
+                  placeholders={[
+                    <Link href="/search"><a><Message id="welcome-desc-searching" /></a></Link>,
+                    <Link href="/search"><a><Message id="welcome-desc-providing" /></a></Link>,
+                  ]}
+                />
               </p>
             </div>
           </div>

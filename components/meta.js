@@ -1,13 +1,25 @@
-import { useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import Head from 'next/head';
+import { BananaContext } from '@wikimedia/react.i18n';
 import getResourceMetadata from '../utils/resource/metadata';
+
+function useResourceMetadata(resource) {
+  const banana = useContext(BananaContext);
+
+  return useMemo(() => (
+    getResourceMetadata(resource, banana.i18n('name'))
+  ), [
+    banana,
+    resource,
+  ]);
+}
 
 function Meta({
   resource,
 }) {
   const {
     og, schema, title, robots,
-  } = useMemo(() => getResourceMetadata(resource), [resource]);
+  } = useResourceMetadata(resource);
 
   return (
     <Head>
