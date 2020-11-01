@@ -6,32 +6,56 @@
   "scope": "/",
   "start_url": "/",
   "background_color": "#AAADB4",
-  "theme_color": "#A0A3B5",
+  "theme_color": "#50545b",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/img/icons/512w.png",
+      "src": "/img/icons/circle/512w.png",
       "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/img/icons/256w.png",
+      "src": "/img/icons/circle/256w.png",
       "type": "image/png",
       "sizes": "256x256",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/img/icons/192w.png",
+      "src": "/img/icons/circle/192w.png",
       "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/img/icons/144w.png",
+      "src": "/img/icons/circle/144w.png",
       "type": "image/png",
       "sizes": "144x144",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/img/icons/square/512w.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/img/icons/square/256w.png",
+      "type": "image/png",
+      "sizes": "256x256",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/img/icons/square/192w.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/img/icons/square/144w.png",
+      "type": "image/png",
+      "sizes": "144x144",
+      "purpose": "maskable"
     }
   ]
 }
