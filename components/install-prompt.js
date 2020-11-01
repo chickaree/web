@@ -98,7 +98,7 @@ function InstallPrompt() {
     }
 
     if ([STATUS_ACCEPT, STATUS_DECLINE].includes(state.status)) {
-      localStorage.setIteam('install', state.status);
+      localStorage.setItem('install', state.status);
     }
   }, [
     prompter,
