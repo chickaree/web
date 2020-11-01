@@ -193,10 +193,10 @@ function Chickaree({ Component, pageProps }) {
     <UpdaterContext.Provider value={autoUpdater}>
       <DatabaseContext.Provider value={database}>
         <AppContext.Provider value={[state, dispatcher]}>
-          <PrompterContext value={prompter}>
+          <PrompterContext.Provider value={prompter}>
             {/* eslint-disable-next-line react/jsx-props-no-spreading */}
             <Component {...pageProps} />
-          </PrompterContext>
+          </PrompterContext.Provider>
         </AppContext.Provider>
       </DatabaseContext.Provider>
     </UpdaterContext.Provider>
