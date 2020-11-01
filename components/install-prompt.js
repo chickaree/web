@@ -1,5 +1,5 @@
 import {
-  useCallback, useContext, useEffect, useReducer, useRef,
+  useCallback, useContext, useEffect, useReducer,
 } from 'react';
 import PrompterContext from '../context/prompter';
 import Card from './card';
@@ -62,7 +62,7 @@ function reducer(state, action) {
   }
 }
 
-function InstallPrompt({ disable = false }) {
+function InstallPrompt() {
   const prompter = useContext(PrompterContext);
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -120,7 +120,7 @@ function InstallPrompt({ disable = false }) {
     dispatch,
   ]);
 
-  if (disable || state.status !== STATUS_PROMPT) {
+  if (state.status !== STATUS_PROMPT) {
     return null;
   }
 
