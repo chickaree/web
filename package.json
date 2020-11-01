@@ -1,6 +1,6 @@
 {
   "name": "@chickaree/web",
-  "version": "2.11.0",
+  "version": "2.11.1",
   "license": "AGPL-3.0-or-later",
   "main": "dist/main.js",
   "files": [
