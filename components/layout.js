@@ -283,6 +283,7 @@ const Layout = ({
     <>
       <Head>
         <title>Chickaree</title>
+        <link rel="manifest" href="/manifest.json" />
         <meta key="robots" name="robots" content="all" />
         <meta key="viewport" name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta key="og:title" property="og:title" content="Chickaree" />

@@ -1,0 +1,37 @@
+{
+  "name": "Chickaree",
+  "short_name": "Chickaree",
+  "description": "A new social network designed to reach all your followers without an algorithm getting in the way.",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "background_color": "#AAADB4",
+  "theme_color": "#A0A3B5",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/img/icons/512w.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/icons/256w.png",
+      "type": "image/png",
+      "sizes": "256x256",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/icons/192w.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/icons/144w.png",
+      "type": "image/png",
+      "sizes": "144x144",
+      "purpose": "any maskable"
+    }
+  ]
+}
