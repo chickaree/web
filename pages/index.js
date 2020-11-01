@@ -1,5 +1,4 @@
 import {
-  lazy,
   useContext,
   useReducer,
   useMemo,
@@ -21,6 +20,7 @@ import {
   distinctUntilChanged,
   switchMap,
 } from 'rxjs/operators';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { DateTime } from 'luxon';
 import useReactor from '@cinematix/reactor';
@@ -34,7 +34,7 @@ import getResponseData from '../utils/response/data';
 import fetchResource from '../utils/fetch/resource';
 import wrapObject from '../utils/wrap-obj';
 
-const InstallPrompt = lazy(() => import('../components/install-prompt'));
+const InstallPrompt = dynamic(() => import('../components/install-prompt'));
 
 const STATUS_INIT = 'init';
 const STATUS_READY = 'ready';
