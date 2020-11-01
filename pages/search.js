@@ -13,13 +13,13 @@ import {
   defaultIfEmpty,
 } from 'rxjs/operators';
 import { fromFetch } from 'rxjs/fetch';
+import { Message } from '@wikimedia/react.i18n';
 import Layout from '../components/layout';
 import fetchResource from '../utils/fetch/resource';
 import getResponseData from '../utils/response/data';
 import MIME_TYPES from '../utils/mime-types';
 import Item from '../components/card/item';
 import getResourceLinkData from '../utils/resource/link-data';
-import { Message } from '@wikimedia/react.i18n';
 
 const initialState = {
   resources: [],
