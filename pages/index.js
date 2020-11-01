@@ -1,4 +1,5 @@
 import {
+  lazy,
   useContext,
   useReducer,
   useMemo,
@@ -26,13 +27,14 @@ import useReactor from '@cinematix/reactor';
 import AppContext from '../context/app';
 import Layout from '../components/layout';
 import Item from '../components/card/item';
-import InstallPrompt from '../components/install-prompt';
 import UpdaterContext from '../context/updater';
 import itemArrayToMap from '../utils/item-array-map';
 import DatabaseContext from '../context/db';
 import getResponseData from '../utils/response/data';
 import fetchResource from '../utils/fetch/resource';
 import wrapObject from '../utils/wrap-obj';
+
+const InstallPrompt = lazy(() => import('../components/install-prompt'));
 
 const STATUS_INIT = 'init';
 const STATUS_READY = 'ready';
