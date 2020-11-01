@@ -122,7 +122,7 @@ function InstallPrompt() {
   ]);
 
   if (state.status !== STATUS_PROMPT) {
-    // return null;
+    return null;
   }
 
   return (
