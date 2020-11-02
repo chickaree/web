@@ -61,7 +61,6 @@ body .wrapper {
     transform: translate3d(0);
     -webkit-transition: all .3s ease;
     transition: all .3s ease;
-    &.nav-opening,
     &.nav-open {
       -webkit-transform: translate3d(-200px, 0, 0);
       transform: translate3d(-200px, 0, 0);
@@ -70,13 +69,6 @@ body .wrapper {
         .event-container {
           pointer-events: none;
         }
-      }
-    }
-    &.nav-open,
-    &.nav-opening,
-    &.nav-closing {
-      header {
-        position: absolute;
       }
     }
   }

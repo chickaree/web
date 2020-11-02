@@ -1,5 +1,4 @@
 import Head from 'next/head';
-import Link from 'next/link';
 import {
   useReducer,
   useCallback,
@@ -7,20 +6,18 @@ import {
   useMemo,
   useRef,
   useContext,
+  useLayoutEffect,
 } from 'react';
 import { useRouter } from 'next/router';
 import { BananaContext, Message } from '@wikimedia/react.i18n';
 import BackButton from './back-button';
 import UpdaterContext from '../context/updater';
 
-const MENU_TOGGLE = 'MENU_TOGGLE';
-const MENU_TRANSITION_COMPLETE = 'MENU_TRANSITION_COMPLETE';
-const NAVIGATION = 'NAVIGATION';
+const MENU_OPEN = 'MENU_OPEN';
+const MENU_CLOSE = 'MENU_CLOSE';
 
 const STATUS_OPEN = 'open';
 const STATUS_CLOSED = 'closed';
-const STATUS_OPENING = 'opening';
-const STATUS_CLOSING = 'closing';
 
 const initialState = {
   status: STATUS_CLOSED,
@@ -30,42 +27,25 @@ const initialState = {
 
 function reducer(state, action) {
   switch (action.type) {
-    case MENU_TOGGLE:
-      if ([STATUS_CLOSED, STATUS_CLOSING].includes(state.status)) {
+    case MENU_OPEN:
+      if (state.status === STATUS_CLOSED) {
         return {
           ...state,
-          status: STATUS_OPENING,
+          status: STATUS_OPEN,
           scrollY: action.payload,
-          navigate: '',
-        };
-      }
-
-      if ([STATUS_OPEN, STATUS_OPENING].includes(state.status)) {
-        return {
-          ...state,
-          status: STATUS_CLOSING,
         };
       }
 
       return state;
-    case NAVIGATION:
-      if ([STATUS_OPEN, STATUS_OPENING].includes(state.status)) {
+    case MENU_CLOSE:
+      if (state.status === STATUS_OPEN) {
         return {
           ...state,
-          status: STATUS_CLOSING,
-          navigate: action.payload,
+          status: STATUS_CLOSED,
+          scrollY: action.payload,
         };
       }
 
-      return state;
-    case MENU_TRANSITION_COMPLETE:
-      if ([STATUS_OPENING, STATUS_CLOSING].includes(state.status)) {
-        return {
-          ...state,
-          status: state.status === STATUS_OPENING ? STATUS_OPEN : STATUS_CLOSED,
-          scrollY: state.status === STATUS_CLOSING ? 0 : state.scrollY,
-        };
-      }
       return state;
     default:
       throw new Error(`Unkown Action: ${action.type}`);
@@ -124,38 +104,44 @@ function NavLink({
   );
 }
 
-const Layout = ({
+function getCanvasClassName(status) {
+  return `canvas nav-${status}`;
+}
+
+function Layout({
   backButton = false,
   onRefresh,
   children,
-}) => {
+}) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const router = useRouter();
-  const canvasRef = useRef(undefined);
+  const canvasRef = useRef();
+  const headerRef = useRef();
+  const navRef = useRef();
+  const statusRef = useRef(state.status);
   const autoUpdater = useContext(UpdaterContext);
   const banana = useContext(BananaContext);
 
-  // Update the state when the animation completes.
-  useEffect(() => {
-    if (!canvasRef.current) {
+  const handleMenuClick = useCallback(() => {
+    dispatch({
+      type: state.status === STATUS_OPEN ? MENU_CLOSE : MENU_OPEN,
+      payload: window.scrollY,
+    });
+  }, [
+    state.status,
+  ]);
+
+
+  useLayoutEffect(() => {
+    // The status has not changed.
+    if (state.status === statusRef.current) {
       return;
     }
 
-    canvasRef.current.addEventListener('transitionend', () => {
-      dispatch({ type: MENU_TRANSITION_COMPLETE });
-    });
-  }, []);
+    statusRef.current = state.status;
 
-  const handleMenuClick = useCallback(() => {
-    dispatch({
-      type: MENU_TOGGLE,
-      payload: window.scrollY,
-    });
-  });
-
-  useEffect(() => {
     // Stop the scrolling and prevent further scrolling.
-    if (state.status === STATUS_OPENING) {
+    if (state.status === STATUS_OPEN) {
       document.body.classList.add('overflow-hidden');
       // Hack to prevent scrolling.
       window.onscroll = () => {
@@ -163,42 +149,38 @@ const Layout = ({
       };
       // Scroll to the position.
       window.scrollTo(0, state.scrollY);
-    } else if (state.status === STATUS_CLOSING) {
+
+      headerRef.current.style.top = `${state.scrollY}px`;
+      headerRef.current.style.position = 'absolute';
+      navRef.current.style.top = `${state.scrollY}px`;
+    } else if (state.status === STATUS_CLOSED) {
       // Stop listening to the scroll event.
       window.onscroll = undefined;
       document.body.classList.remove('overflow-hidden');
+
+      // Wait until the transition has ended to update the head styles.
+      canvasRef.current.addEventListener('transitionend', (event) => {
+        // It's really weird that we have to wwait even more...
+        setTimeout(() => {
+          if (navRef.current) {
+            navRef.current.style.top = 0;
+          }
+          if (headerRef.current) {
+            headerRef.current.style.top = 0;
+            headerRef.current.style.position = 'fixed';
+          }
+        }, event.elapsedTime * 1000);
+      }, { once: true });
     }
   }, [
     state.status,
     state.scrollY,
   ]);
 
-  useEffect(() => {
-    if (state.status !== STATUS_CLOSED || state.navigate === '') {
-      return;
-    }
-
-    router.push(state.navigate);
-  }, [
-    router,
-    state.status,
-    state.navigate,
-  ]);
-
-  const canvasClassName = useMemo(() => (
-    `canvas nav-${state.status}`
-  ), [
-    state.status,
-  ]);
-
-  const styles = useMemo(() => ({
-    top: state.scrollY,
-  }), [
-    state.scrollY,
-  ]);
+  const canvasClassName = getCanvasClassName(state.status);
 
   const menuButtonTitle = useMemo(() => {
-    if ([STATUS_OPEN, STATUS_OPENING].includes(state.status)) {
+    if (state.status === STATUS_OPEN) {
       return banana.i18n('menu-close');
     }
 
@@ -209,7 +191,7 @@ const Layout = ({
   ]);
 
   const menuButtonClassName = useMemo(() => {
-    if ([STATUS_OPEN, STATUS_OPENING].includes(state.status)) {
+    if (state.status === STATUS_OPEN) {
       return 'btn btn-link pl-0 pr-0 active';
     }
 
@@ -226,8 +208,23 @@ const Layout = ({
 
     e.preventDefault();
 
-    dispatch({ type: NAVIGATION, payload: e.currentTarget.getAttribute('href') });
-  }, []);
+    if (state.status === STATUS_OPEN) {
+      const href = e.currentTarget.getAttribute('href');
+      // Wait until the transition ends before navigating.
+      canvasRef.current.addEventListener('transitionend', (event) => {
+        // It's really weird that we have to wwait even more...
+        setTimeout(() => {
+          router.push(href);
+        }, event.elapsedTime * 1000);
+      }, { once: true });
+
+      dispatch({ type: MENU_CLOSE });
+    } else {
+      router.push(e.currentTarget.getAttribute('href'));
+    }
+  }, [
+    state.status,
+  ]);
 
   const onLogoClick = useCallback(() => {
     // Before doing anything, scroll to the top of the page to make the site
@@ -260,7 +257,7 @@ const Layout = ({
       <img src="/img/icon2.svg" alt={banana.i18n('name')} />
     );
 
-    if (router.pathname === '/') {
+    if (state.status === STATUS_CLOSED && router.pathname === '/') {
       return (
         <button type="button" className="btn btn-link p-0" title={banana.i18n('refresh')} onClick={onLogoClick}>
           {img}
@@ -269,14 +266,14 @@ const Layout = ({
     }
 
     return (
-      <Link href="/">
-        <a title={banana.i18n('menu-home')}>
-          {img}
-        </a>
-      </Link>
+      <a href="/" onClick={handleNavClick} title={banana.i18n('menu-home')}>
+        {img}
+      </a>
     );
   }, [
+    state.status,
     router.pathname,
+    handleNavClick,
     onLogoClick,
   ]);
 
@@ -298,28 +295,22 @@ const Layout = ({
       </Head>
       <div className="wrapper">
         <div className={canvasClassName} ref={canvasRef}>
-          <nav className="main" style={styles}>
+          <nav className="main" ref={navRef}>
             <ol className="nav flex-column nav-lg">
-              {/* @TODO Add icon attribution (about page?) */}
-              {/* https://www.flaticon.com/free-icon/tree-silhouette_46564 */}
               <li className="nav-item home">
                 <NavLink href="/" onClick={handleNavClick} visable={isVisable}>
-                  <svg version="1.1" x="0px" y="0px" width="18" height="18" viewBox="0 0 590.074 590.073">
+                  <svg
+                    version="1.1"
+                    xmlns="http://www.w3.org/2000/svg"
+                    x="0px"
+                    y="0px"
+                    width="21"
+                    height="21"
+                    viewBox="0 0 568.031 568.03"
+                  >
                     <g>
                       <path
-                        d="M537.804,174.688c0-44.772-33.976-81.597-77.552-86.12c-12.23-32.981-43.882-56.534-81.128-56.534
-                          c-16.304,0-31.499,4.59-44.514,12.422C319.808,17.949,291.513,0,258.991,0c-43.117,0-78.776,31.556-85.393,72.809
-                          c-3.519-0.43-7.076-0.727-10.71-0.727c-47.822,0-86.598,38.767-86.598,86.598c0,2.343,0.172,4.638,0.354,6.933
-                          c-24.25,15.348-40.392,42.333-40.392,73.153c0,27.244,12.604,51.513,32.273,67.387c-0.086,1.559-0.239,3.107-0.239,4.686
-                          c0,47.822,38.767,86.598,86.598,86.598c14.334,0,27.817-3.538,39.723-9.696c16.495,11.848,40.115,26.67,51.551,23.715
-                          c0,0,4.255,65.905,3.337,82.64c-1.75,31.843-11.303,67.291-18.025,95.979h104.117c0,0-15.348-63.954-16.018-85.307
-                          c-0.669-21.354,6.675-60.675,6.675-60.675l36.118-37.36c13.903,9.505,30.695,14.908,48.807,14.908
-                          c44.771,0,81.597-34.062,86.12-77.639c32.98-12.23,56.533-43.968,56.533-81.214c0-21.994-8.262-41.999-21.765-57.279
-                          C535.71,195.926,537.804,185.561,537.804,174.688z M214.611,373.444c6.942-6.627,12.766-14.372,17.212-22.969l17.002,35.62
-                          C248.816,386.096,239.569,390.179,214.611,373.444z M278.183,395.438c-8.798,1.597-23.782-25.494-34.416-47.517
-                          c11.791,6.015,25.102,9.477,39.254,9.477c3.634,0,7.201-0.296,10.72-0.736C291.006,374.286,286.187,393.975,278.183,395.438z
-                          M315.563,412.775c-20.35,5.651-8.167-36.501-2.334-60.904c4.218-1.568,8.301-3.413,12.183-5.604
-                          c2.343,17.786,10.069,33.832,21.516,46.521C337.011,401.597,325.593,409.992,315.563,412.775z"
+                        d="M508.752,177.104c-12.55-9.086-21.587-23.337-20.004-37.312c5.586-49.327-24.644-91.457-73.514-99.144 c-8.678-1.367-17.319-5.092-25.141-9.282c-14.745-7.902-30.11-10.812-45.998-6.381c-8.58,2.395-13.859,1.326-20.678-4.847 c-38.899-35.219-99.862-22.632-118.92,25.169c-5.471,13.729-13.562,21.742-26.247,26.965c-2.832,1.167-5.94,2.484-7.952,4.639 c-6.332,6.781-12.366,5.108-20.037,1.845C100.74,57.663,47.41,92.371,45.346,146.044c-0.293,7.666-3.472,15.989-7.584,22.599 c-14.721,23.685-17.324,47.446-7.442,72.065c-7.116,17.776-0.91,39.939,16.618,52.796c19.233,14.112,41.412,6.748,58.409-6.912 c4.811-0.457,9.707-1.432,14.705-2.962c9.992-3.064,19.013-6.724,27.438-2.644c1.334,0.991,2.705,1.872,4.096,2.685 c0.372,0.31,0.743,0.6,1.114,0.946c0.049-0.077,0.09-0.139,0.139-0.216c2.774,1.497,5.651,2.631,8.597,3.496 c16.345,57.765,51.481,108.36,99.731,144.22c-2.941,35.333-12.346,69.973-29.87,103.918c-19.56,11.958-43.423,3.309-63.905-2.362 c-18.107-5.015-35.737-6.862-53.815-1.094c-3.741,1.195-5.483,4.153-5.667,7.218c-0.024,0.086-0.061,0.155-0.082,0.244 c-1.371,5.892-2.742,11.783-4.113,17.671c-1.281,5.512,2.689,9.286,6.993,10.028c0.673,0.172,1.387,0.29,2.179,0.29h334.561 c2.934,0,5.019-1.289,6.315-3.117c1.926-1.506,3.203-3.814,3.203-6.405v-12.24c0-3.623-2.48-6.724-5.802-7.76 c-1.269-1.069-2.945-1.759-5.08-1.759h-101.09c-5.022-5.802-10.135-11.661-15.414-17.458 c-14.688-16.129-21.167-34.081-14.565-55.799c2.293-7.544,3.945-15.39,4.899-23.219c2.819-23.199,5.455-46.508,8.128-70.156 c33.929-3.231,64.61-17.698,88.43-42.244c9.882-0.024,18.752-2.954,26.148-7.928l2.967-0.922 c16.12,13.008,40.987,14.35,59.771,7.414c17.405-6.427,32.457-23.836,32.983-42.975c0.049-1.792-0.041-3.566-0.196-5.325 C551.695,243.241,539.304,199.227,508.752,177.104z M213.658,282.23c0.192-0.073,0.351-0.131,0.542-0.204 c3.505-1.334,9.613,0.196,12.767,2.647c4.447,3.46,8.653,7.23,12.766,11.065c0.082,0.326,0.086,0.628,0.188,0.963 c6.279,20.983,12.559,41.971,18.837,62.954c1.498,10.576,2.452,21.082,2.97,31.534C229.24,364.475,211.467,324.81,213.658,282.23z M335.541,342.88c1.469-3.518,2.941-7.034,4.472-10.535c0.51,0,1.024,0,1.534-0.004c0-1.212,0.028-2.428,0.069-3.647 c4.19-9.396,8.768-18.584,13.908-27.364c6.549,5.773,13.37,10.959,20.637,15.189C363.995,327.273,350.355,336.103,335.541,342.88z"
                       />
                     </g>
                   </svg>
@@ -339,7 +330,7 @@ const Layout = ({
               </li>
             </ol>
           </nav>
-          <header style={styles}>
+          <header ref={headerRef}>
             <div className="container-fluid">
               <div className="row pt-1 pb-1">
                 <div className="col-2">
@@ -349,7 +340,7 @@ const Layout = ({
                   {logo}
                 </div>
                 <div className="col-2 text-right">
-                  <button type="button" className={menuButtonClassName} title={menuButtonTitle} onClick={handleMenuClick} aria-pressed={[STATUS_OPENING, STATUS_OPEN].includes(state.status) ? true : undefined}>
+                  <button type="button" className={menuButtonClassName} title={menuButtonTitle} onClick={handleMenuClick} aria-pressed={state.status === STATUS_OPEN ? true : undefined}>
                     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
                       <path d="M0 0h24v24H0z" fill="none" />
                       <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
@@ -361,7 +352,7 @@ const Layout = ({
           </header>
           {/* eslint-disable-next-line max-len */}
           {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions,jsx-a11y/click-events-have-key-events */}
-          <main className="content min-vh-100" onClick={[STATUS_OPEN, STATUS_OPENING].includes(state.status) ? handleMenuClick : undefined}>
+          <main className="content min-vh-100" onClick={state.status === STATUS_OPEN ? handleMenuClick : undefined}>
             <div className="event-container min-vh-100">
               {children}
             </div>
@@ -370,6 +361,6 @@ const Layout = ({
       </div>
     </>
   );
-};
+}
 
 export default Layout;
