@@ -74,7 +74,7 @@ function searchReactor(value$) {
       try {
         const url = new URL(v);
         return fetchResource(url).pipe(
-          filter((response) => !response || !response.ok),
+          filter((response) => response && response.ok),
           flatMap((response) => getResponseData(response)),
           map((resource) => ({
             type: RESOURCES_SET,
