@@ -5,6 +5,28 @@ import getResponseUrl from '../response-url';
 import MIME_TYPES from '../mime-types';
 import getMimeType from '../mime-type';
 
+function getEmptyObject(href, mediaType) {
+  const id = (new URL(href)).toString();
+
+  let url = {
+    type: 'Link',
+    href: id,
+  };
+
+  if (mediaType !== '') {
+    url = {
+      ...url,
+      mediaType,
+    };
+  }
+
+  return {
+    id,
+    type: 'Object',
+    url,
+  };
+}
+
 async function getResponseData(response) {
   const url = getResponseUrl(response);
 
@@ -12,32 +34,17 @@ async function getResponseData(response) {
 
   let mimeType = getMimeType(response);
 
-  if (mimeType === '') {
-    return {
-      id: url.toString(),
-      type: 'Object',
-      url: {
-        type: 'Link',
-        href: url.toString(),
-      },
-    };
-  }
-
-  if (!MIME_TYPES.has(mimeType)) {
-    return {
-      id: url.toString(),
-      type: 'Object',
-      url: {
-        type: 'Link',
-        href: url.toString(),
-        mediaType: mimeType,
-      },
-    };
+  if (mimeType === '' || !MIME_TYPES.has(mimeType)) {
+    return getEmptyObject(url, mimeType);
   }
 
   if (mimeType === 'application/json') {
-    const data = await response.json();
-    return getResponseDataJson(url, data);
+    try {
+      const data = await response.json();
+      return getResponseDataJson(url, data);
+    } catch (e) {
+      return getEmptyObject(url, mimeType);
+    }
   }
 
   // DOMParser does not support rss/atom

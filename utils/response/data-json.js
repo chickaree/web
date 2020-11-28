@@ -11,7 +11,7 @@ async function getResponseDataJson(url, data) {
       href: url.toString(),
       mediaType: 'application/json',
     },
-    name: data.title || '',
+    name: typeof data.title === 'string' ? data.title : undefined,
     icon: getImageObj(data.icon, url),
     summary: data.description || '',
     orderedItems: (data.items || []).map(({
@@ -40,7 +40,7 @@ async function getResponseDataJson(url, data) {
       return {
         id,
         type: 'Object',
-        name: title,
+        name: typeof title === 'string' ? title : undefined,
         url: href ? {
           type: 'Link',
           href,

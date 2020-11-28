@@ -5,7 +5,7 @@ import Article from './article';
 function Item({
   resource,
 }) {
-  if (!resource) {
+  if (!resource || !resource.name) {
     return null;
   }
 
