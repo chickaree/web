@@ -30,22 +30,28 @@ const initialState = {
 };
 
 async function loadFollowing(db) {
-  const activity = await db.activity.where('type').anyOf('Follow', 'Undo').toArray();
+  try {
+    const activity = await db.activity.where('type').anyOf('Follow', 'Undo').toArray();
 
-  return [...activity.reduce((map, { type, id, object }) => {
-    switch (type) {
-      case 'Follow':
-        map.set(id, object.href);
-        return map;
-      case 'Undo':
-        if (map.has(object.id)) {
-          map.delete(object.id);
-        }
-        return map;
-      default:
-        return map;
-    }
-  }, new Map()).values()];
+    return [...activity.reduce((map, { type, id, object }) => {
+      switch (type) {
+        case 'Follow':
+          map.set(id, object.href);
+          return map;
+        case 'Undo':
+          if (map.has(object.id)) {
+            map.delete(object.id);
+          }
+          return map;
+        default:
+          return map;
+      }
+    }, new Map()).values()];
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error(e);
+    return [];
+  }
 }
 
 function reducer(state, action) {
@@ -84,7 +90,10 @@ function Chickaree({ Component, pageProps }) {
       setPrompter(e);
     });
 
-    const db = new Dexie('Chickaree');
+    const db = new Dexie('Chickaree', {
+      autoOpen: false,
+    });
+
     db.version(1).stores({
       // @TODO We should remove the auto-incrementing when Dexie supports it.
       activity: '++id, type, published, object.id, object.type, object.href',
@@ -101,13 +110,23 @@ function Chickaree({ Component, pageProps }) {
       })
     ));
 
-    setDatabase(db);
-
-    loadFollowing(db).then((feeds) => {
+    db.open().then((openedDb) => {
+      setDatabase(openedDb);
+      loadFollowing(openedDb).then((feeds) => {
+        dispatch({
+          type: FOLLOWING_SET,
+          payload: feeds,
+        });
+      });
+    }).catch((e) => {
+      // Database didn't open for some reason, set the folowing to empty.
       dispatch({
         type: FOLLOWING_SET,
-        payload: feeds,
+        payload: [],
       });
+
+      // eslint-disable-next-line no-console
+      console.error(e);
     });
 
     // Do not register the service worker in development.
@@ -155,7 +174,7 @@ function Chickaree({ Component, pageProps }) {
 
   // Intercept a dispatch and convert it to an action to be saved in IndexedDB.
   const dispatcher = useCallback((action) => {
-    if ([FOLLOW, UNFOLLOW].includes(action.type)) {
+    if (database && [FOLLOW, UNFOLLOW].includes(action.type)) {
       const id = `https://chickar.ee/activity/${ulid().toLowerCase()}`;
       const published = DateTime.utc().toJSDate();
 

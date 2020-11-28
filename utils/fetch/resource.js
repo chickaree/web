@@ -24,7 +24,7 @@ function fetchResource(resource, init = {}) {
 
   return defer(() => {
     //  Start the cache opening.
-    const resourceCache = caches.open(RESOURCE_CACHE);
+    const resourceCache = caches.open(RESOURCE_CACHE).catch(() => undefined);
 
     // Attampt to make a HEAD request in order to determine CORS compatibility.
     return fromFetch(url, {
@@ -37,7 +37,7 @@ function fetchResource(resource, init = {}) {
 
         if (!MIME_TYPES.has(mimeType)) {
           const clonedResponse = headResponse.clone();
-          resourceCache.then((cache) => cache.put(url, clonedResponse));
+          resourceCache.then((cache) => cache && cache.put(url, clonedResponse));
           return of(headResponse);
         }
 
@@ -46,12 +46,12 @@ function fetchResource(resource, init = {}) {
           map((response) => {
             // Update the cache in the background.
             const clonedResponse = response.clone();
-            resourceCache.then((cache) => cache.put(url, clonedResponse));
+            resourceCache.then((cache) => cache && cache.put(url, clonedResponse));
             return response;
           }),
           catchError(() => (
             // If the main request fails, attempt to use the cache.
-            from(resourceCache.then((cache) => cache.match(url)))
+            from(resourceCache.then((cache) => cache && cache.match(url)))
           )),
         );
       }),
@@ -66,12 +66,12 @@ function fetchResource(resource, init = {}) {
           map((response) => {
             // Update the cache in the background.
             const clonedResponse = response.clone();
-            resourceCache.then((cache) => cache.put(url, clonedResponse));
+            resourceCache.then((cache) => cache && cache.put(url, clonedResponse));
             return response;
           }),
           catchError(() => (
             // If the main request fails, attempt to use the cache.
-            from(resourceCache.then((cache) => cache.match(url)))
+            from(resourceCache.then((cache) => cache && cache.match(url)))
           )),
         );
       }),

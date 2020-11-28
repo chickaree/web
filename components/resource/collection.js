@@ -21,6 +21,7 @@ import MIME_TYPES from '../../utils/mime-types';
 import getLinkHref from '../../utils/link-href';
 import AppContext from '../../context/app';
 import Item from '../card/item';
+import DatabaseContext from '../../context/db';
 
 function Banner({ src, alt }) {
   if (!src) {
@@ -184,6 +185,7 @@ function Collection({
   } = resource;
 
   const [state, dispatch] = useReducer(reducer, initialState);
+  const db = useContext(DatabaseContext);
 
   useReactor(itemReactor, dispatch, [resource]);
 
@@ -240,7 +242,7 @@ function Collection({
   ), [state.items]);
 
   let follow;
-  if (entities.length > 0) {
+  if (db && entities.length > 0) {
     follow = (
       <div className={iconSrc ? 'd-lg-none row mb-2 justify-content-center' : 'row mb-2 justify-content-center'}>
         <div className="col-8 col-lg-6">
@@ -266,7 +268,7 @@ function Collection({
           </div>
         </div>
         <div className="row mt-3 mb-3">
-          <CollectionIcon src={iconSrc} href={url.href} alt={title} className="col-lg-2 d-lg-block d-none" follow={entities.length > 0} />
+          <CollectionIcon src={iconSrc} href={url.href} alt={title} className="col-lg-2 d-lg-block d-none" follow={db && entities.length > 0} />
           <div className={iconSrc ? 'col-lg-10 col' : 'col-lg-8 offset-lg-2 col'}>
             <div className="row d-none d-lg-flex">
               <div className="col-12 col-lg-auto">
