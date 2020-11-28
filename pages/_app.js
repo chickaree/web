@@ -18,6 +18,8 @@ import DatabaseContext from '../context/db';
 import PrompterContext from '../context/prompter';
 import en from '../i18n/en.json';
 
+const FOLLOWING = 'following';
+
 const STATUS_INIT = 'init';
 const STATUS_READY = 'ready';
 const FOLLOWING_SET = 'FOLLOWING_SET';
@@ -60,12 +62,12 @@ function reducer(state, action) {
       return {
         ...state,
         status: STATUS_READY,
-        following: [...new Set([...state.following, ...action.payload])],
+        following: Array.from(new Set([...state.following, ...action.payload])),
       };
     case FOLLOW:
       return {
         ...state,
-        following: [...new Set([...state.following, action.payload])],
+        following: Array.from(new Set([...state.following, action.payload])),
       };
     case UNFOLLOW:
       return {
@@ -118,15 +120,11 @@ function Chickaree({ Component, pageProps }) {
           payload: feeds,
         });
       });
-    }).catch((e) => {
-      // Database didn't open for some reason, set the folowing to empty.
+    }).catch(() => {
       dispatch({
         type: FOLLOWING_SET,
-        payload: [],
+        payload: JSON.parse(('localStorage' in window ? window.localStorage.getItem(FOLLOWING) : null) || '[]'),
       });
-
-      // eslint-disable-next-line no-console
-      console.error(e);
     });
 
     // Do not register the service worker in development.
@@ -208,6 +206,17 @@ function Chickaree({ Component, pageProps }) {
   }, [
     database,
     dispatch,
+  ]);
+
+  // If the database is not availble, persist in localStorage.
+  useEffect(() => {
+    if (state.status === STATUS_READY && !database && 'localStorage' in window) {
+      window.localStorage.setItem(FOLLOWING, JSON.stringify(state.following));
+    }
+  }, [
+    database,
+    state.status,
+    state.following,
   ]);
 
   // @TODO support more languages.

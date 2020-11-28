@@ -230,7 +230,7 @@ function Index() {
 
   const dispatcher = useCallback((action) => {
     // Update the database.
-    if (action.type === ITEMS_ACTIVITY) {
+    if (db && action.type === ITEMS_ACTIVITY) {
       action.payload.forEach(({ type, object }) => {
         switch (type) {
           case ACTIVITY_CREATE:
@@ -277,20 +277,28 @@ function Index() {
   ]);
 
   useEffect(() => {
-    if (!db) {
+    if (app.status !== STATUS_READY) {
       return;
     }
 
-    db.feed.orderBy('published').reverse().toArray().then((items) => (
+    if (db) {
+      db.feed.orderBy('published').reverse().toArray().then((items) => (
+        dispatch({
+          type: ITEMS_SET,
+          payload: items.map((item) => ({
+            ...item,
+            published: item.published ? DateTime.fromJSDate(item.published).toISO() : undefined,
+          })),
+        })
+      ));
+    } else {
       dispatch({
         type: ITEMS_SET,
-        payload: items.map((item) => ({
-          ...item,
-          published: item.published ? DateTime.fromJSDate(item.published).toISO() : undefined,
-        })),
-      })
-    ));
+        payload: [],
+      });
+    }
   }, [
+    app.status,
     db,
   ]);
 
