@@ -111,7 +111,7 @@ function Chickaree({ Component, pageProps }) {
     });
 
     // Do not register the service worker in development.
-    if (!process.env.DEV) {
+    if (!process.env.DEV && 'serviceWorker' in navigator) {
       const wb = new Workbox('/sw.js');
 
       const handleWaiting = ({ sw, target }) => {
