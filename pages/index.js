@@ -19,6 +19,7 @@ import {
   filter,
   distinctUntilChanged,
   switchMap,
+  debounceTime,
 } from 'rxjs/operators';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -304,9 +305,13 @@ function Index() {
 
   useEffect(() => {
     // Refresh the feed when someone comes back to the tab (if they are scrolled to the top).
-    const obs = fromEvent(document, 'visibilitychange').pipe(
+    const obs = merge(
+      fromEvent(document, 'visibilitychange'),
+      fromEvent(window, 'focus'),
+    ).pipe(
       filter(() => document.visibilityState === 'visible'),
       filter(() => window.scrollY === 0),
+      debounceTime(1000),
     ).subscribe(() => {
       // If the app needs updating, do that instead.
       if (autoUpdater()) {
