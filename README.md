@@ -8,7 +8,7 @@ A new social network designed to reach all your followers without an algorithm g
 Lists of content are prioritized in the following order:
 1.  ~~`application/activity+json`~~ (not yet implemented)
 2. `application/ld+json` ([schema.org/ListItem](https://schema.org/ListItem))
-3. `application/json` ([JSON Feed](https://jsonfeed.org/))
+3. `application/feed+json` ([JSON Feed](https://jsonfeed.org/))
 4. `application/atom+xml`
 5. `application/rss+xml`
 8. `text/html`

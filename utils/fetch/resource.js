@@ -6,7 +6,18 @@ import MIME_TYPES from '../mime-types';
 import RESOURCE_CACHE from '../resource/cache';
 import getMimeType from '../mime-type';
 
-const accept = [...MIME_TYPES].join(', ');
+function generateAccept(mimeTypes) {
+  const joined = mimeTypes.join(', ');
+
+  // Max allowed CORS-safe length is 128.
+  if (joined.length <= 128) {
+    return joined;
+  }
+
+  return generateAccept(mimeTypes.slice(0, -1));
+}
+
+const accept = generateAccept(Array.from(MIME_TYPES));
 
 function fetchResource(resource, init = {}) {
   const url = new URL(resource);

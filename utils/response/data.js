@@ -5,6 +5,9 @@ import getResponseUrl from '../response-url';
 import MIME_TYPES from '../mime-types';
 import getMimeType from '../mime-type';
 
+const JSON_TYPES = new Set(['application/feed+json', 'application/json']);
+const XML_LIKE = new Set(['application/rss+xml', 'application/atom+xml']);
+
 function getEmptyObject(href, mediaType) {
   const id = (new URL(href)).toString();
 
@@ -38,7 +41,7 @@ async function getResponseData(response) {
     return getEmptyObject(url, mimeType);
   }
 
-  if (mimeType === 'application/json') {
+  if (JSON_TYPES.has(mimeType)) {
     try {
       const data = await response.json();
       return getResponseDataJson(url, data);
@@ -48,7 +51,7 @@ async function getResponseData(response) {
   }
 
   // DOMParser does not support rss/atom
-  if (['application/rss+xml', 'application/atom+xml'].includes(mimeType)) {
+  if (XML_LIKE.has(mimeType)) {
     mimeType = 'application/xml';
   }
 

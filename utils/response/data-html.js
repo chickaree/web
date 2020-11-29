@@ -6,7 +6,10 @@ import toArray from '../to-array';
 import { Article, WebPage, ItemList } from '../../tree/schema';
 import getImageObj from '../image-obj';
 import hashUri from '../hash-uri';
+import MIME_TYPES from '../mime-types';
 // import fetchResource from '../fetch-resource';
+
+const JSON_TYPES = new Set(['application/feed+json', 'application/json']);
 
 function intersection(a, b) {
   return a.filter((x) => b.includes(x));
@@ -336,14 +339,14 @@ async function getResponseDataHTML(url, doc) {
       }
 
       // Only include types we currently support.
-      if (!['application/json', 'application/xml', 'application/rss+xml', 'application/atom+xml', 'text/xml'].includes(link.getAttribute('type'))) {
+      if (!MIME_TYPES.has(link.getAttribute('type'))) {
         return false;
       }
 
       return true;
     })
       .sort(({ link: a }, { link: b }) => {
-      // Prefer JSON.
+        // Prefer JSON.
         if (!a.hasAttribute('type') || !b.hasAttribute('type')) {
           return 0;
         }
@@ -352,11 +355,11 @@ async function getResponseDataHTML(url, doc) {
           return 0;
         }
 
-        if (a.getAttribute('type') === 'application/json') {
+        if (JSON_TYPES.has(a.getAttribute('type'))) {
           return -1;
         }
 
-        if (b.getAttribute('type') === 'application/json') {
+        if (JSON_TYPES.has(b.getAttribute('type'))) {
           return 1;
         }
 

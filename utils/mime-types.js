@@ -1,11 +1,12 @@
 const MIME_TYPES = new Set([
-  'application/json',
+  'application/feed+json',
   'application/rss+xml',
   'application/atom+xml',
   'text/html',
+  'application/json',
+  'application/xhtml+xml',
   'text/xml',
   'application/xml',
-  'application/xhtml+xml',
 ]);
 
 export default MIME_TYPES;
