@@ -44,7 +44,7 @@ async function getResponseData(response) {
   if (JSON_TYPES.has(mimeType)) {
     try {
       const data = await response.json();
-      return getResponseDataJson(url, data);
+      return await getResponseDataJson(url, data);
     } catch (e) {
       return getEmptyObject(url, mimeType);
     }
@@ -60,10 +60,18 @@ async function getResponseData(response) {
   const doc = parser.parseFromString(text, mimeType);
 
   if (mimeType === 'text/html') {
-    return getResponseDataHTML(url, doc);
+    try {
+      return await getResponseDataHTML(url, doc);
+    } catch (e) {
+      return getEmptyObject(url, mimeType);
+    }
   }
 
-  return getResponseDataXML(url, doc);
+  try {
+    return await getResponseDataXML(url, doc);
+  } catch (e) {
+    return getEmptyObject(url, mimeType);
+  }
 }
 
 export default getResponseData;
