@@ -3,7 +3,7 @@
   "desc": "Description of the app",
   "install-accept": "Button to install the web application",
   "install-decline": "Button to decline the install of the web application",
-  "install-prompt": "Prompt to the user to install the web app on their device.\nParameters:\n* $1 Name of the app",
+  "install-prompt": "Prompt to the user to install the web app on their device.\nParameters:\n* $1 - Name of the app",
   "menu-close": "Button to close the menu",
   "menu-home": "Label for home page in the menu",
   "menu-open": "Button to open the menu",
@@ -12,8 +12,8 @@
   "refresh": "Button to refresh the feed",
   "search-help": "Help text for search input",
   "search-label": "Form label for search input",
-  "welcome-desc-providing": "Text used in welcome-desc",
-  "welcome-desc-searching": "Text used in welcome-desc",
+  "welcome-desc-providing": "Text used in {{msg-mw|chickaree-welcome-desc}}",
+  "welcome-desc-searching": "Text used in {{msg-mw|chickaree-welcome-desc}}",
   "welcome-desc": "Description used on user's initial visit.\nParameters:\n* $1 - {{msg-mw|chickaree-welcome-desc-searching}}\n* $2 - {{msg-mw|chickaree-welcome-desc-providing}}",
   "welcome-title": "Heading used on user's initial visit"
 }
