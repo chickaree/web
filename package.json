@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "prepare": "napa",
-    "dev": "next dev",
+    "dev": "next dev -p ${PORT:-3000}",
     "build": "next build && next export -o ./html",
     "start": "next start -p ${PORT:-3000}",
     "preview": "next build && next export -o ./html && wrangler preview",
