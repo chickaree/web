@@ -71,7 +71,6 @@ function resourceReactor(value$) {
       return concat(
         init,
         fetchResource(resource).pipe(
-          filter((response) => !!response.ok),
           flatMap((response) => {
             const url = getResponseUrl(response);
 
