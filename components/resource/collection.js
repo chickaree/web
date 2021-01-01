@@ -4,7 +4,7 @@ import {
   useContext,
   useCallback,
 } from 'react';
-import { from, concat, of } from 'rxjs';
+import { from, concat, of, animationFrameScheduler } from 'rxjs';
 import {
   switchMap,
   flatMap,
@@ -150,8 +150,8 @@ function itemReactor(value$) {
               })),
             )
           )),
-          // Group by tick.
-          bufferTime(0),
+          // Group by frame.
+          bufferTime(0, animationFrameScheduler),
           filter((a) => a.length > 0),
           map((feedItems) => ({
             type: 'ITEMS_ADD',

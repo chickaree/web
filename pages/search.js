@@ -1,7 +1,7 @@
 import { useReducer, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import useReactor from '@cinematix/reactor';
-import { EMPTY, of, from } from 'rxjs';
+import { EMPTY, of, from, animationFrameScheduler } from 'rxjs';
 import {
   flatMap,
   switchMap,
@@ -189,8 +189,8 @@ function searchReactor(value$) {
                   )),
                 )
               )),
-              // Group by tick.
-              bufferTime(0),
+              // Group by frame.
+              bufferTime(0, animationFrameScheduler),
               filter((a) => a.length > 0),
               map((resources, i) => {
                 const payload = resources.sort((a, b) => a.position - b.position);
@@ -285,7 +285,7 @@ function Search() {
           <div className="mt-3 col-lg-8 offset-lg-2 col">
             <form className="mb-3" onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="q"><Message id="search-label" /></label>
+                <label htmlFor="q"><h2><Message id="search-label" /></h2></label>
                 <input
                   className="form-control form-control-lg bg-transparent text-primary"
                   type="text"

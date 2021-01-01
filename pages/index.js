@@ -11,6 +11,7 @@ import {
   merge,
   EMPTY,
   of,
+  animationFrameScheduler,
 } from 'rxjs';
 import {
   flatMap,
@@ -145,8 +146,8 @@ function feedRefresher(value$) {
           }),
         ),
       ).pipe(
-        // Group by tick.
-        bufferTime(0),
+        // Group by frame.
+        bufferTime(0, animationFrameScheduler),
         filter((a) => a.length > 0),
         map((activityStream) => ({
           type: ITEMS_ACTIVITY,
