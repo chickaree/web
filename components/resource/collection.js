@@ -4,7 +4,12 @@ import {
   useContext,
   useCallback,
 } from 'react';
-import { from, concat, of, animationFrameScheduler } from 'rxjs';
+import {
+  from,
+  concat,
+  of,
+  animationFrameScheduler,
+} from 'rxjs';
 import {
   switchMap,
   flatMap,

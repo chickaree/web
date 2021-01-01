@@ -1,7 +1,9 @@
 import { useReducer, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import useReactor from '@cinematix/reactor';
-import { EMPTY, of, from, animationFrameScheduler } from 'rxjs';
+import {
+  EMPTY, of, from, animationFrameScheduler,
+} from 'rxjs';
 import {
   flatMap,
   switchMap,
