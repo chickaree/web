@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: docker build --tag docker.pkg.github.com/${GITHUB_REPOSITORY}/web .
-      - run: docker login https://docker.pkg.github.com -u chickaree --password ${{ secrets.GITHUB_TOKEN }}
-      - run: docker push docker.pkg.github.com/${GITHUB_REPOSITORY}/web
+      - run: docker login ghcr.io -u chickaree --password ${{ secrets.GITHUB_TOKEN }}
+      - run: docker build --tag ghcr.io/${GITHUB_REPOSITORY} .
+      - run: docker push ghcr.io/${GITHUB_REPOSITORY}
 
