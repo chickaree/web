@@ -22,7 +22,7 @@
     "@wikimedia/react.i18n": "^2.0.3",
     "base64url": "^3.0.1",
     "copy-webpack-plugin": "^6.0.3",
-    "dexie": "^3.0.1",
+    "dexie": "^3.2.2",
     "dompurify": "^2.0.17",
     "jsdom": "^16.2.2",
     "jsonld": "^3.0.1",
