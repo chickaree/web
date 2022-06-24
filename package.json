@@ -24,7 +24,7 @@
     "copy-webpack-plugin": "^6.0.3",
     "dexie": "^3.0.1",
     "dompurify": "^2.0.17",
-    "jsdom": "^16.2.2",
+    "jsdom": "^16.5.0",
     "jsonld": "^3.0.1",
     "luxon": "^1.23.0",
     "md5": "^2.3.0",
