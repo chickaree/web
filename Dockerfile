@@ -1,10 +1,6 @@
-FROM node:lts-alpine
+ARG BASE="node:lts-alpine"
 
-LABEL org.opencontainers.image.source https://github.com/chickaree/web
-
-EXPOSE 80
-
-ENV PORT 80
+FROM --platform=$BUILDPLATFORM ${BASE} AS builder
 
 COPY . /app
 
@@ -12,5 +8,15 @@ WORKDIR /app
 
 RUN npm install --unsafe-perm --verbose; \
   npm run build;
+
+FROM ${BASE} AS server
+
+EXPOSE 80
+
+ENV PORT 80
+
+COPY --from=builder /app /app
+
+WORKDIR /app
 
 CMD npm start;
