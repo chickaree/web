@@ -1,4 +1,4 @@
-ARG BASE="node:lts-alpine"
+ARG BASE="node:16-alpine"
 
 FROM --platform=$BUILDPLATFORM ${BASE} AS builder
 
